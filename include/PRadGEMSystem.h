@@ -75,7 +75,7 @@ public:
     PRadGEMDetector *GetDetector(const int &id) const;
     PRadGEMDetector *GetDetector(const std::string &name) const;
     PRadGEMFEC *GetFEC(const int &id) const;
-    PRadGEMAPV *GetAPV(const GEMChannelAddress &addr) const;
+    PRadGEMAPV *GetAPV(const APVAddress &addr) const;
     PRadGEMAPV *GetAPV(const int &fec, const int &adc) const;
 
     std::vector<GEM_Data> GetZeroSupData() const;

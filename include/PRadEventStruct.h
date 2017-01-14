@@ -155,23 +155,23 @@ struct DSC_Data
     {};
 };
 
-struct APVAddress
+struct GEMChannelAddress
 {
     unsigned char fec;
     unsigned char adc;
     unsigned char strip;
 
-    APVAddress() {};
-    APVAddress(const unsigned char &f,
-               const unsigned char &a,
-               const unsigned char &s)
+    GEMChannelAddress() {};
+    GEMChannelAddress(const unsigned char &f,
+                      const unsigned char &a,
+                      const unsigned char &s)
     : fec(f), adc(a), strip(s)
     {};
 };
 
 struct GEM_Data
 {
-    APVAddress addr;
+    GEMChannelAddress addr;
     std::vector<float> values;
 
     GEM_Data() {};
@@ -195,6 +195,7 @@ struct GEM_Data
         values.push_back(v);
     }
 };
+
 //============================================================================//
 // *END* RAW EVENT DATA COMPONENTS                                            //
 //============================================================================//

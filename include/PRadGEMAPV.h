@@ -8,10 +8,10 @@
 #include "datastruct.h"
 
 //1 time sample data have 128 channel
-#define TIME_SAMPLE_SIZE 128
+#define APV_CHANNEL_SIZE 128
 
 // 12 words before real time sample data
-#define TIME_SAMPLE_DIFF 140 // 12 + TIME_SAMPLE_SIZE
+#define TIME_SAMPLE_DIFF 140 // 12 + APV_CHANNEL_SIZE
 
 // arbitrary number, additional buffer add on time sample data
 // this depends on the configuration in the readout list
@@ -94,9 +94,9 @@ public:
     // get parameters
     int GetFECID() const {return fec_id;};
     int GetADCChannel() const {return adc_ch;};
-    GEMChannelAddress GetAddress() const {return GEMChannelAddress(fec_id, adc_ch);};
+    APVAddress GetAddress() const {return APVAddress(fec_id, adc_ch);};
     uint32_t GetNTimeSamples() const {return time_samples;};
-    uint32_t GetTimeSampleSize() const {return TIME_SAMPLE_SIZE;};
+    uint32_t GetTimeSampleSize() const {return APV_CHANNEL_SIZE;};
     int GetOrientation() const {return orient;};
     int GetPlaneIndex() const {return plane_index;};
     int GetHeaderLevel() const {return header_level;};
@@ -111,6 +111,9 @@ public:
     PRadGEMPlane *GetPlane() const {return plane;};
     std::vector<TH1I *> GetHistList() const;
     std::vector<Pedestal> GetPedestalList() const;
+    float GetMaxCharge(const uint32_t &ch) const;
+    float GetAveragedCharge(const uint32_t &ch) const;
+    float GetIntegratedCharge(const uint32_t &ch) const;
 
     // set parameters
     void SetFEC(PRadGEMFEC *f, int adc_ch, bool force_set = false);
@@ -145,15 +148,15 @@ private:
     float zerosup_thres;
     float crosstalk_thres;
     uint32_t buffer_size;
-    uint32_t ts_index;
+    uint32_t ts_begin;
     float *raw_data;
-    Pedestal pedestal[TIME_SAMPLE_SIZE];
-    StripNb strip_map[TIME_SAMPLE_SIZE];
-    bool hit_pos[TIME_SAMPLE_SIZE];
-    TH1I *offset_hist[TIME_SAMPLE_SIZE];
-    TH1I *noise_hist[TIME_SAMPLE_SIZE];
+    Pedestal pedestal[APV_CHANNEL_SIZE];
+    StripNb strip_map[APV_CHANNEL_SIZE];
+    bool hit_pos[APV_CHANNEL_SIZE];
+    TH1I *offset_hist[APV_CHANNEL_SIZE];
+    TH1I *noise_hist[APV_CHANNEL_SIZE];
 };
 
-std::ostream &operator <<(std::ostream &os, const GEMChannelAddress &ad);
+std::ostream &operator <<(std::ostream &os, const APVAddress &ad);
 
 #endif

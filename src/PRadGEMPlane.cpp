@@ -230,36 +230,6 @@ const
     return direction*position;
 }
 
-// get the maximum charge from input charges
-float PRadGEMPlane::GetMaxCharge(const std::vector<float> &charges)
-const
-{
-    if(!charges.size())
-        return 0.;
-
-    float result = charges.at(0);
-
-    for(uint32_t i = 1; i < charges.size(); ++i)
-    {
-        if(result < charges.at(i))
-            result = charges.at(i);
-    }
-
-    return result;
-}
-
-// get the average charge from input charges
-float PRadGEMPlane::GetIntegratedCharge(const std::vector<float> &charges)
-const
-{
-    float result = 0.;
-
-    for(auto &charge : charges)
-        result += charge;
-
-    return result;
-}
-
 // clear the stored plane hits
 void PRadGEMPlane::ClearStripHits()
 {
@@ -267,20 +237,15 @@ void PRadGEMPlane::ClearStripHits()
 }
 
 // add a plane hit
-// X plane needs to remove 16 strips at both ends, because they are floating
-// This is a special setup for PRad GEMs, so not configurable
-void PRadGEMPlane::AddStripHit(const int &plane_strip,
-                               const std::vector<float> &charges,
-                               const bool &ct_flag)
+void PRadGEMPlane::AddStripHit(int strip, float charge, bool xtalk, int fec, int adc)
 {
+    // floating strip removal
+    // hard coded because it is specific to PRad GEM setting
     if((type == Plane_X) &&
-       ((plane_strip < 16) || (plane_strip > 1391)))
+       ((strip < 16) || (strip > 1391)))
        return;
 
-    strip_hits.emplace_back(plane_strip,
-                            GetMaxCharge(charges),
-                            GetStripPosition(plane_strip),
-                            ct_flag);
+    strip_hits.emplace_back(strip, charge, GetStripPosition(strip), xtalk, fec, adc);
 }
 
 // collect hits from the connected APVs

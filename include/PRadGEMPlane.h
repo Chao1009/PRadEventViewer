@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <string>
+#include "PRadGEMAPV.h"
 
 // unit is mm
 // X plane did a shift to move the X origin to center hole
@@ -13,7 +14,6 @@
 
 class PRadGEMDetector;
 class PRadGEMCluster;
-class PRadGEMAPV;
 // these two structure will be used for cluster reconstruction, defined at the end
 struct StripHit;
 struct StripCluster;
@@ -52,12 +52,10 @@ public:
     void ConnectAPV(PRadGEMAPV *apv, const int &index);
     void DisconnectAPV(const uint32_t &plane_index, bool force_disconn);
     void DisconnectAPVs();
-    void AddStripHit(const int &plane_strip, const std::vector<float> &charges, const bool &ct = false);
+    void AddStripHit(int strip, float charge, bool xtalk, int fec, int adc);
     void ClearStripHits();
     void CollectAPVHits();
     float GetStripPosition(const int &plane_strip) const;
-    float GetMaxCharge(const std::vector<float> &charges) const;
-    float GetIntegratedCharge(const std::vector<float> &charges) const;
     void FormClusters(PRadGEMCluster *method);
 
     // set parameter
@@ -103,12 +101,14 @@ struct StripHit
     float charge;
     float position;
     bool cross_talk;
+    APVAddress apv_addr;
 
-    StripHit() : strip(0), charge(0.), position(0.), cross_talk(false) {};
-    StripHit(const int &s, const float &c, const float &p)
-    : strip(s), charge(c), position(p), cross_talk(false) {};
-    StripHit(const int &s, const float &c, const float &p, const bool &f)
-    : strip(s), charge(c), position(p),cross_talk(f) {};
+    StripHit()
+    : strip(0), charge(0.), position(0.), cross_talk(false), apv_addr(-1, -1)
+    {};
+    StripHit(int s, float c, float p, bool f = false, int fec = -1, int adc = -1)
+    : strip(s), charge(c), position(p), cross_talk(f), apv_addr(fec, adc)
+    {};
 };
 
 struct StripCluster

@@ -115,17 +115,17 @@ struct ChannelAddress
 
 };
 
-struct GEMChannelAddress
+struct APVAddress
 {
     int fec_id;
     int adc_ch;
 
-    GEMChannelAddress() {};
-    GEMChannelAddress(const int &f, const int &a)
+    APVAddress() {};
+    APVAddress(const int &f, const int &a)
     : fec_id(f), adc_ch(a)
     {};
 
-    bool operator < (const GEMChannelAddress &rhs) const
+    bool operator < (const APVAddress &rhs) const
     {
         if( fec_id != rhs.fec_id)
             return fec_id < rhs.fec_id;
@@ -135,7 +135,7 @@ struct GEMChannelAddress
             return false;
     }
 
-    bool operator == (const GEMChannelAddress &rhs) const
+    bool operator == (const APVAddress &rhs) const
     {
         if( (fec_id != rhs.fec_id) ||
             (adc_ch != rhs.adc_ch) )
@@ -226,14 +226,14 @@ struct EPICSRawData
 
 struct GEMRawData
 {
-    GEMChannelAddress addr;
+    APVAddress addr;
     const uint32_t *buf;
     uint32_t size;
 };
 
 struct GEMZeroSupData
 {
-    GEMChannelAddress addr;
+    APVAddress addr;
     unsigned char channel;
     unsigned char time_sample;
     unsigned short adc_value;

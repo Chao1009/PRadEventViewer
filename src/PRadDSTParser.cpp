@@ -462,7 +462,7 @@ throw(PRadException)
 
     for(auto apv : apv_list)
     {
-        GEMChannelAddress addr = apv->GetAddress();
+        APVAddress addr = apv->GetAddress();
         writeBuffer((char*) &addr, sizeof(addr));
 
         std::vector<PRadGEMAPV::Pedestal> ped_list = apv->GetPedestalList();
@@ -489,7 +489,7 @@ throw(PRadException)
 
     for(uint32_t i = 0; i < apv_size; ++i)
     {
-        GEMChannelAddress addr;
+        APVAddress addr;
         readBuffer((char*) &addr, sizeof(addr));
 
         PRadGEMAPV *apv = nullptr;

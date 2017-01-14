@@ -533,7 +533,7 @@ const
 }
 
 // find APV by its ChannelAddress
-PRadGEMAPV *PRadGEMSystem::GetAPV(const GEMChannelAddress &addr)
+PRadGEMAPV *PRadGEMSystem::GetAPV(const APVAddress &addr)
 const
 {
     return GetAPV(addr.fec_id, addr.adc_ch);
