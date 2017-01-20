@@ -17,42 +17,7 @@
 
 namespace cana
 {
-    // the function is based on c++ source code
-    // it adds permutation parity track
-    template<class BidirIt>
-    bool permutate(BidirIt first, BidirIt last, int &parity)
-    {
-        if (first == last) return false;
-        BidirIt i = last;
-        if (first == --i) return false;
-
-        while (true) {
-            BidirIt i1, i2;
-
-            i1 = i;
-            if (*--i < *i1) {
-                i2 = last;
-                while (!(*i < *--i2))
-                    ;
-                std::iter_swap(i, i2);
-                std::reverse(i1, last);
-                size_t swap = std::distance(i1, last)/2 + 1;
-                // odd number of swaps
-                if(swap&1)  parity *= -1;
-                // even number of swaps, no change needed
-                return true;
-            }
-            if (i == first) {
-                std::reverse(first, last);
-                size_t swap = std::distance(first, last)/2;
-                // odd number of swaps
-                if(swap&1)  parity *= -1;
-                // even number of swaps, no change needed
-                return false;
-            }
-        }
-    }
-
+    double sigmoid(const double &a, const double &p);
     double gamma(const double &z);
     double spence(const double &z, const double &res = 1e-15);
     double spence_tr(const double &z, const double &res, const int &nmax);
@@ -100,6 +65,42 @@ namespace cana
         }
 
         return result*s/3.;
+    }
+
+    // the function is based on c++ source code
+    // it adds permutation parity track
+    template<class BidirIt>
+    bool permutate(BidirIt first, BidirIt last, int &parity)
+    {
+        if (first == last) return false;
+        BidirIt i = last;
+        if (first == --i) return false;
+
+        while (true) {
+            BidirIt i1, i2;
+
+            i1 = i;
+            if (*--i < *i1) {
+                i2 = last;
+                while (!(*i < *--i2))
+                    ;
+                std::iter_swap(i, i2);
+                std::reverse(i1, last);
+                size_t swap = std::distance(i1, last)/2 + 1;
+                // odd number of swaps
+                if(swap&1)  parity *= -1;
+                // even number of swaps, no change needed
+                return true;
+            }
+            if (i == first) {
+                std::reverse(first, last);
+                size_t swap = std::distance(first, last)/2;
+                // odd number of swaps
+                if(swap&1)  parity *= -1;
+                // even number of swaps, no change needed
+                return false;
+            }
+        }
     }
 
     template<class RdmaccIt, typename T>

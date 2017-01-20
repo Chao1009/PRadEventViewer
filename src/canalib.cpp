@@ -7,25 +7,6 @@
 
 #include "canalib.h"
 
-double cana::simpson(double begin, double end,
-                     double (*f)(const double&), double step, int Nmin)
-{
-    int Nsteps = (end - begin)/step;
-    int Nbins = std::max(Nmin, Nsteps)/2;
-    double s = (end - begin)/(double)(2.*Nbins);
-
-    // first bin
-    double result = (*f)(begin) + 4.*(*f)(begin + s) + (*f)(end);
-    double x = begin + 2.*s;
-    int i = 1;
-    while(i++ < Nbins)
-    {
-        result += 2.*(*f)(x) + 4.*(*f)(x + s);
-        x += 2.*s;
-    }
-    return result*s/3.;
-}
-
 #define __GAMMA_NUM 9
 #define __GAMMA_G 7.0
 static double __gamma_c[] = {0.9999999999998099,
@@ -37,6 +18,25 @@ static double __gamma_c[] = {0.9999999999998099,
                             -1.3857109526572012E-1,
                              9.9843695780195716E-6,
                              1.5056327351493116E-7};
+
+#define __SPENCE_NUM 8
+#define __SPENCE_NMAX 50
+#define __SPENCE_NMAX_PREC 1000
+static double __spence_c[] = {-1.1741940560772957946600E-1,
+                              -2.7618966846029390643791E-2,
+                              -8.0493987190845793511240E-3,
+                              -2.7095568666150792944136E-3,
+                              -7.1455906877666711465857E-4,
+                               4.1757495974272487715417E-2,
+                              -4.9028996486663818655E-2,
+                              -9.08073640732783360};
+
+
+// sigmoid function
+double cana::sigmoid(const double &a, const double &p)
+{
+	return 1./(1. + std::exp(-a/p));
+}
 
 // gamma function
 double cana::gamma(const double &z)
@@ -58,18 +58,6 @@ double cana::gamma(const double &z)
         return exp(output);
     }
 }
-
-#define __SPENCE_NUM 8
-#define __SPENCE_NMAX 50
-#define __SPENCE_NMAX_PREC 1000
-static double __spence_c[] = {-1.1741940560772957946600E-1,
-                              -2.7618966846029390643791E-2,
-                              -8.0493987190845793511240E-3,
-                              -2.7095568666150792944136E-3,
-                              -7.1455906877666711465857E-4,
-                               4.1757495974272487715417E-2,
-                              -4.9028996486663818655E-2,
-                              -9.08073640732783360};
 
 // spence function
 double cana::spence(const double &z, const double &res)
@@ -117,3 +105,24 @@ double cana::spence_tr(const double &z, const double &res, const int &nmax)
 
     return output;
 }
+
+// simpson integration
+double cana::simpson(double begin, double end,
+                     double (*f)(const double&), double step, int Nmin)
+{
+    int Nsteps = (end - begin)/step;
+    int Nbins = std::max(Nmin, Nsteps)/2;
+    double s = (end - begin)/(double)(2.*Nbins);
+
+    // first bin
+    double result = (*f)(begin) + 4.*(*f)(begin + s) + (*f)(end);
+    double x = begin + 2.*s;
+    int i = 1;
+    while(i++ < Nbins)
+    {
+        result += 2.*(*f)(x) + 4.*(*f)(x + s);
+        x += 2.*s;
+    }
+    return result*s/3.;
+}
+

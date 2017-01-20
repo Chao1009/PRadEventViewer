@@ -106,6 +106,8 @@ void EventSelect(const string &file, const string &bad_file)
                 // clear event package after writing
                 event_pack.clear();
             }
+        } else if(dst_parser.EventType() == PRadDSTParser::Type::epics) {
+            dst_parser.WriteEPICS();
         }
     }
 
