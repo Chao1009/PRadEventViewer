@@ -13,7 +13,7 @@ else
     setenv THIRD_LIB  ${PWD}/thirdparty/lib
 endif
 
-setenv PRAD_LIB ${PWD}/decoder/lib
+setenv PRAD_LIB ${PWD}/decoder/libs
 
 # comment this if you have your own root installed
 source /apps/root/6.06.02/setroot_CUE.csh

@@ -11,7 +11,10 @@ public:
 
     unsigned int CreateNet(unsigned int input_size,
                            unsigned int output_size,
-                           const std::vector<int> &hidden_layers);
+                           const std::vector<unsigned int> &hidden_layers);
+    unsigned int CreateNet(const char *path);
+    void InitializeWeights();
+    void SaveNet(const char *path) const;
     std::vector<double> Output(const std::vector<double> &input) const;
 
 private:

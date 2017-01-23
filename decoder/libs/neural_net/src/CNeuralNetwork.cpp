@@ -6,17 +6,22 @@
 //============================================================================//
 
 #include "CNeuralNetwork.h"
+#include <iostream>
+#include <fstream>
+#include <random>
 
 
 
+// constructor
 CNeuralNetwork::CNeuralNetwork()
 {
     // place holder
 }
 
+// create a network
 unsigned int CNeuralNetwork::CreateNet(unsigned int input_size,
                                        unsigned int output_size,
-                                       const std::vector<int> &hidden_layers)
+                                       const std::vector<unsigned int> &hidden_layers)
 {
     // erase original layers
     layers.clear();
@@ -40,6 +45,142 @@ unsigned int CNeuralNetwork::CreateNet(unsigned int input_size,
     return layers.size();
 }
 
+// helper functions for reading binary file
+inline void __cnn_read_uint32(std::ifstream &ifs, uint32_t &word)
+{
+    ifs.read((char*) &word, sizeof(uint32_t));
+}
+
+inline void __cnn_read_real64(std::ifstream &ifs, double &word)
+{
+    ifs.read((char*) &word, sizeof(double));
+}
+
+// create a network from saved data file
+unsigned int CNeuralNetwork::CreateNet(const char *path)
+{
+    std::ifstream inf(path, std::ios::in|std::ios::binary);
+    if(!inf.is_open())
+    {
+        std::cerr << "Cannot open file " << path
+                  << ", failed to create network from file."
+                  << std::endl;
+        return 0;
+    }
+
+    layers.clear();
+
+    uint32_t uint_word;
+    double real_word;
+
+    __cnn_read_uint32(inf, uint_word);
+    unsigned int input_size = uint_word;
+
+    __cnn_read_uint32(inf, uint_word);
+    unsigned int layers_size = uint_word;
+
+    for(unsigned int i = 0; i < layers_size; ++i)
+    {
+        // create a layer
+        __cnn_read_uint32(inf, uint_word);
+        unsigned int neurons_size = uint_word;
+        CNeuronLayer new_layer(input_size, neurons_size);
+        input_size = neurons_size;
+
+        // read weights from the layer
+        for(unsigned int i = 0; i < neurons_size; ++i)
+        {
+            CNeuron &neuron = new_layer.GetNeurons().at(i);
+            __cnn_read_uint32(inf, uint_word);
+            unsigned int weights_size = uint_word;
+            std::vector<double> weights(weights_size);
+            for(unsigned int j = 0; j < weights_size; ++j)
+            {
+                __cnn_read_real64(inf, real_word);
+                weights[j] = real_word;
+            }
+            neuron.SetWeights(weights);
+        }
+
+        layers.emplace_back(std::move(new_layer));
+    }
+
+    return layers.size();
+}
+
+// initialize all the weights, assign them with random numbers
+void CNeuralNetwork::InitializeWeights()
+{
+    std::mt19937 rng;
+    rng.seed(std::random_device()());
+    std::uniform_real_distribution<double> uni_dist(0., 1.);
+
+    for(auto &layer : layers)
+    {
+        for(auto &neuron : layer.GetNeurons())
+        {
+            for(auto &weight : neuron.GetWeights())
+            {
+                weight = uni_dist(rng);
+            }
+        }
+    }
+}
+
+// helper functions for writing binary file
+inline void __cnn_write_uint32(std::ofstream &ofs, uint32_t word)
+{
+    ofs.write((char*) &word, sizeof(uint32_t));
+}
+
+inline void __cnn_write_real64(std::ofstream &ofs, double word)
+{
+    ofs.write((char*) &word, sizeof(double));
+}
+
+// save network to a data file
+void CNeuralNetwork::SaveNet(const char *path)
+const
+{
+    if(layers.empty())
+    {
+        std::cout << "This network has 0 layer, abort saving to " << path
+                  << std::endl;
+        return;
+    }
+
+    std::ofstream outf(path, std::ios::out | std::ios::binary);
+
+    if(!outf.is_open())
+    {
+        std::cerr << "Cannot open file " << path
+                  << ", save aborted!"
+                  << std::endl;
+        return;
+    }
+
+    // input size
+    __cnn_write_uint32(outf, layers.front().GetInputSize());
+    // number of total layers
+    __cnn_write_uint32(outf, layers.size());
+    for(auto &layer : layers)
+    {
+        // layer size
+        __cnn_write_uint32(outf, layer.GetNeurons().size());
+        // weights
+        for(auto &neuron : layer.GetNeurons())
+        {
+            // number of weights
+            __cnn_write_uint32(outf, neuron.GetWeights().size());
+            for(auto &weight : neuron.GetWeights())
+            {
+                __cnn_write_real64(outf, weight);
+            }
+        }
+    }
+}
+
+// give the network an input array and get the output array
 std::vector<double> CNeuralNetwork::Output(const std::vector<double> &input)
 const
 {

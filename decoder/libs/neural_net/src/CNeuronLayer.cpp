@@ -4,10 +4,13 @@
 // Chao Peng                                                                  //
 // 01/21/2017                                                                 //
 //============================================================================//
+
 #include "CNeuronLayer.h"
 #include <iostream>
 
 
+
+// constructor
 CNeuronLayer::CNeuronLayer(unsigned int con_size, unsigned int size)
 : input_size(con_size)
 {
@@ -17,6 +20,7 @@ CNeuronLayer::CNeuronLayer(unsigned int con_size, unsigned int size)
     }
 }
 
+// give the layer an input array and get its output array
 std::vector<double> CNeuronLayer::Output(const std::vector<double> &input)
 const
 {

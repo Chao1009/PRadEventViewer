@@ -14,7 +14,7 @@ endif
 setenv ROOTSYS /apps/root/5.34.21
 
 if ! $?LD_LIBRARY_PATH then
-	setenv LD_LIBRARY_PATH ${PWD}/decoder/lib:${THIRD_LIB}:${ET_LIB}:${ROOTSYS}/lib
+	setenv LD_LIBRARY_PATH ${PWD}/decoder/libs:${THIRD_LIB}:${ET_LIB}:${ROOTSYS}/lib
 else
-	setenv LD_LIBRARY_PATH ${PWD}/decoder/lib:${THIRD_LIB}:${ET_LIB}:${ROOTSYS}/lib:${LD_LIBRARY_PATH}
+	setenv LD_LIBRARY_PATH ${PWD}/decoder/libs:${THIRD_LIB}:${ET_LIB}:${ROOTSYS}/lib:${LD_LIBRARY_PATH}
 endif

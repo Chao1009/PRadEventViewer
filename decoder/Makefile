@@ -12,7 +12,8 @@ CXX           = g++
 FORTRAN       = gfortran
 FFLAGS        = -fPIC
 CXXFLAGS      = -std=c++11 -O2 -g -pipe -Wall -m64 -mtune=generic -fPIC
-INCPATH       = -Iinclude -I$(PRAD_PATH)/include -I$(ROOTSYS)/include
+INCPATH       = -Iinclude -I$(PRAD_PATH)/include -I$(PRAD_LIBS)/include \
+				-I$(ROOTSYS)/include
 DEL_FILE      = rm -f
 CHK_DIR_EXISTS= test -d
 MKDIR         = mkdir -p
@@ -59,8 +60,8 @@ EXAMPLE       = testGEM \
                 beamChargeCount \
 				cosmicCheck \
 				mollerCenter \
+				testNeural \
 				physCalib
-#                testCombine
 
 EXAMPLE_BINS  = $(addprefix $(EXAMPLE_DIR)/, $(EXAMPLE))
 

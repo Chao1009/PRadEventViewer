@@ -10,11 +10,32 @@
 #include <cmath>
 
 
+
+// constructor
 CNeuron::CNeuron(unsigned int size)
 {
+    // connections + bias
     weights.resize(size + 1, 0.);
 }
 
+// set the weights for this neuron
+void CNeuron::SetWeights(const std::vector<double> &w)
+{
+    if(w.size() != weights.size())
+    {
+        std::cout << "Unmatched input size " << w.size()
+                  << " and weights size " << weights.size()
+                  << ", the setting may be incorrect."
+                  << std::endl;
+    }
+
+    for(unsigned int i = 0; i < w.size() && i < weights.size(); ++i)
+    {
+        weights.at(i) = w.at(i);
+    }
+}
+
+// give the neuron an input array and get its output
 double CNeuron::Output(const std::vector<double> &input)
 const
 {
@@ -36,7 +57,7 @@ const
     return sigmoid(result, 1.0);
 }
 
-// sigmoid function
+// sigmoid function for output
 inline double CNeuron::sigmoid(const double &a, const double &p)
 const
 {

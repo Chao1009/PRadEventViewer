@@ -16,6 +16,6 @@ export ET_INC=/home/chao/PRad/coda/Linux-x86_64/include
 #export ET_LIB=$THIRD_LIB
 #export ET_INC=$PWD/thirdparty/include
 
-export DEC_LIB=$PWD/decoder/lib
+export DEC_LIB=$PWD/decoder/libs
 
 export LD_LIBRARY_PATH=$DEC_LIB:$THIRD_LIB:$ET_LIB:$LD_LIBRARY_PATH
