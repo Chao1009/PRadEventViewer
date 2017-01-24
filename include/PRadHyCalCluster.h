@@ -34,6 +34,7 @@ public:
 protected:
     PRadHyCalCluster();
     int fillHits(BaseHit *temp,
+                 int max_hits,
                  const ModuleHit &center,
                  const std::vector<ModuleHit> &hits) const;
     void reconstructPos(BaseHit *temp, int count, BaseHit *recon) const;

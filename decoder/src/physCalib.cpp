@@ -692,16 +692,17 @@ vector<string> FindInputFiles(const string &in_dir, int start, int end)
 
     const char* dir_item;
     while( (dir_item = gSystem->GetDirEntry(dirp)) ) {
-        if (!strncmp("prad_", dir_item, 5) && !strncmp(".dst", dir_item+strlen(dir_item)-4, 4)) {
+        string file_name = dir_item;
+        if ((file_name.find("prad") != string::npos) &&
+            (file_name.substr(file_name.size() - 3) == "dst")) {
             string thisName = in_dir;
             if(in_dir.back() != '/')
                 thisName.append("/");
-            thisName.append(dir_item);
+            thisName.append(file_name);
 
             int runNumber = GetRunNumber(thisName);
             if (runNumber <= end && runNumber >= start) {
                 res.push_back(thisName);
-                cout<<"-.-"<<flush;
             }
         }
     }

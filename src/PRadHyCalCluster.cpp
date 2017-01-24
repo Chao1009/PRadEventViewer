@@ -170,7 +170,7 @@ const
 
     // fill 3x3 hits around center into temp container for position reconstruction
     BaseHit cl[POS_RECON_HITS];
-    int count = fillHits(cl, cluster.center, cluster.hits);
+    int count = fillHits(cl, POS_RECON_HITS, cluster.center, cluster.hits);
 
     // record how many hits participated in position reconstruction
     hycal_hit.npos = count;
@@ -242,7 +242,7 @@ const
 
         // reconstruct position using cluster hits and dead modules
         // fill existing cluster hits
-        int count = fillHits(cl, center, cluster.hits);
+        int count = fillHits(cl, POS_RECON_HITS, center, cluster.hits);
 
         // fill virtual hits for dead modules
         temp_hit.E = cluster.energy;
@@ -297,6 +297,7 @@ const
 
 // only use the center 3x3 to fill the temp container
 inline int PRadHyCalCluster::fillHits(BaseHit *temp,
+                                      int max_hits,
                                       const ModuleHit &center,
                                       const std::vector<ModuleHit> &hits)
 const
@@ -304,6 +305,13 @@ const
     int count = 0;
     for(auto &hit : hits)
     {
+        if(count >= max_hits) {
+            std::cout << "Warning, " << count << " hits participate in position "
+                      << "reconstruction, while buffer size is " << max_hits
+                      << std::endl;
+            break;
+        }
+
         if(PRadHyCalDetector::hit_distance(center, hit) < CORNER_ADJACENT) {
             temp[count].x = hit.geo.x;
             temp[count].y = hit.geo.y;
@@ -318,13 +326,6 @@ const
 void PRadHyCalCluster::reconstructPos(BaseHit *temp, int count, BaseHit *recon)
 const
 {
-    if(count > POS_RECON_HITS) {
-        std::cout << "Warning, " << count << " hits participate in position "
-                  << "reconstruction, while buffer size is " << POS_RECON_HITS
-                  << std::endl;
-        count = POS_RECON_HITS;
-    }
-
     // get total energy
     float energy = 0;
     for(int i= 0; i < count; ++i)
