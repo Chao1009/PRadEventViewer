@@ -71,8 +71,11 @@ first: all
 
 all: lib exe
 
+.PHONY: lib cleanobj cleanlib
+
 lib:
-	 cd $(PRAD_LIBS) && $(MAKE)
+	$(MAKE) -C $(PRAD_LIBS)
+#cd $(PRAD_LIBS) && $(MAKE)
 
 exe:
 	 $(MAKE) $(EXAMPLE_BINS)
@@ -87,10 +90,10 @@ cleanexe:
 	$(DEL_FILE) $(EXAMPLE)
 
 cleanobj:
-	cd $(PRAD_LIBS) && $(MAKE) cleanobj
+	$(MAKE) -C $(PRAD_LIBS) cleanobj
 
 cleanlib:
-	cd $(PRAD_LIBS) && $(MAKE) cleanlib
+	$(MAKE) -C $(PRAD_LIBS) cleanlib
 
 ####### Install
 

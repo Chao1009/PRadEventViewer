@@ -103,11 +103,15 @@ ifneq (, $(findstring MULTI_THREAD,$(COMPONENTS)))
 endif
 
 ####### Build rules
-first: all
+first: all neural
+
+.PHONY: neural cleanobj cleanlib
 
 all:
 	 $(MAKE) $(TARGET_LIB)
-	 cd $(NEURAL) && $(MAKE)
+
+neural:
+	 $(MAKE) -C $(NEURAL)
 
 $(TARGET_LIB):  $(LIB_OBJECTS)
 	$(LINK) $(LFLAGS) -o $(LIB_DIR)/$(TARGET_LIB) $(LIB_OBJECTS) $(LIBS)
@@ -123,9 +127,9 @@ clean: cleanobj cleanlib
 
 cleanobj:
 	$(DEL_FILE) $(LIB_OBJ_DIR)/*.o $(EXE_OBJ_DIR)/*.o
-	cd $(NEURAL) && $(MAKE) cleanobj
+	$(MAKE) -C $(NEURAL) cleanobj
 
 cleanlib:
 	$(DEL_FILE) $(LIB_DIR)/$(TARGET_LIB)
-	cd $(NEURAL) && $(MAKE) cleanlib
+	$(MAKE) -C $(NEURAL) cleanlib
 

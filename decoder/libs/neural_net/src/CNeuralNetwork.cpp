@@ -13,7 +13,8 @@
 
 
 // constructor
-CNeuralNetwork::CNeuralNetwork()
+CNeuralNetwork::CNeuralNetwork(double factor)
+: learn_factor(factor)
 {
     // place holder
 }
@@ -41,6 +42,12 @@ unsigned int CNeuralNetwork::CreateNet(unsigned int input_size,
 
     // output layer
     layers.emplace_back(input_size, output_size);
+
+    // build connections
+    for(unsigned int i = 1; i < layers.size(); ++i)
+    {
+        layers.at(i).Connect(layers.at(i-1));
+    }
 
     return layers.size();
 }
@@ -105,6 +112,12 @@ unsigned int CNeuralNetwork::CreateNet(const char *path)
         layers.emplace_back(std::move(new_layer));
     }
 
+    // build connections
+    for(unsigned int i = 1; i < layers.size(); ++i)
+    {
+        layers.at(i).Connect(layers.at(i-1));
+    }
+
     return layers.size();
 }
 
@@ -119,10 +132,13 @@ void CNeuralNetwork::InitializeWeights()
     {
         for(auto &neuron : layer.GetNeurons())
         {
-            for(auto &weight : neuron.GetWeights())
+            std::vector<double> weights;
+            weights.reserve(neuron.GetWeightSize());
+            for(unsigned int i = 0; i < neuron.GetWeightSize(); ++i)
             {
-                weight = uni_dist(rng);
+                weights.push_back(uni_dist(rng));
             }
+            neuron.SetWeights(weights);
         }
     }
 }
@@ -171,8 +187,9 @@ const
         for(auto &neuron : layer.GetNeurons())
         {
             // number of weights
-            __cnn_write_uint32(outf, neuron.GetWeights().size());
-            for(auto &weight : neuron.GetWeights())
+            auto weights = neuron.GetWeights();
+            __cnn_write_uint32(outf, weights.size());
+            for(auto &weight : weights)
             {
                 __cnn_write_real64(outf, weight);
             }
@@ -181,17 +198,35 @@ const
 }
 
 // give the network an input array and get the output array
-std::vector<double> CNeuralNetwork::Output(const std::vector<double> &input)
-const
+void CNeuralNetwork::Update(const std::vector<double> &input)
 {
-    // first result
-    std::vector<double> result = std::move(layers.front().Output(input));
+    // first layer
+    layers[0].Update(input);
 
+    // the other layers will look for its previous layer's signals
     for(unsigned int i = 1; i < layers.size(); ++i)
     {
-        result = std::move(layers.at(i).Output(result));
+        layers[i].Update();
     }
-
-    return result;
 }
 
+std::vector<double> CNeuralNetwork::GetOutput()
+const
+{
+    std::vector<double> res;
+    if(layers.empty())
+        return res;
+
+    auto &outn = layers.back().GetNeurons();
+    res.reserve(outn.size());
+    for(auto &neuron : outn)
+        res.push_back(neuron.signal);
+
+    return res;
+}
+
+void CNeuralNetwork::Train(const std::vector<double> &input,
+                           const std::vector<double> &expect)
+{
+    // place holder
+}

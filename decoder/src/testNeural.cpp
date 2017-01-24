@@ -16,8 +16,8 @@ int main(int /*argc*/, char * /*argv*/ [])
 //    my_net.CreateNet(5, 1, {3});
 //    my_net.InitializeWeights();
     my_net.CreateNet("save_net.dat");
-    auto result = my_net.Output({0.1, 0.2, 0.3, 0.4, 0.5});
+    my_net.Update({0.1, 0.2, 0.3, 0.4, 0.5});
 //    my_net.SaveNet("save_net.dat");
-    cout << result.at(0) << endl;
+    cout << my_net.GetOutput().at(0) << endl;
     return 0;
 }

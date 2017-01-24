@@ -14,47 +14,96 @@
 // constructor
 CNeuron::CNeuron(unsigned int size)
 {
-    // connections + bias
-    weights.resize(size + 1, 0.);
+    connections.resize(size);
+}
+
+CNeuron::CNeuron(std::vector<CNeuron> &neurons)
+{
+    for(auto &neuron : neurons)
+    {
+        connections.emplace_back(0., &neuron);
+    }
+}
+
+void CNeuron::Connect(unsigned int idx, CNeuron *n)
+{
+    if(idx < connections.size())
+    {
+        connections.at(idx).neuron = n;
+    }
+}
+
+void CNeuron::Connect(std::vector<CNeuron> &neurons)
+{
+    for(unsigned int i = 0; i < neurons.size(); ++i)
+    {
+        Connect(i, &neurons.at(i));
+    }
 }
 
 // set the weights for this neuron
 void CNeuron::SetWeights(const std::vector<double> &w)
 {
-    if(w.size() != weights.size())
+    if(w.size() != connections.size() + 1)
     {
-        std::cout << "Unmatched input size " << w.size()
-                  << " and weights size " << weights.size()
-                  << ", the setting may be incorrect."
+        std::cerr << "Unmatched input size " << w.size()
+                  << " and weights size " << connections.size() + 1
+                  << ", abort weight setting."
                   << std::endl;
+        return;
     }
 
-    for(unsigned int i = 0; i < w.size() && i < weights.size(); ++i)
+    for(unsigned int i = 0; i < connections.size(); ++i)
     {
-        weights.at(i) = w.at(i);
+        connections.at(i).weight = w.at(i);
     }
+
+    bias = w.back();
 }
 
-// give the neuron an input array and get its output
-double CNeuron::Output(const std::vector<double> &input)
-const
+// give the neuron an input array and update its output
+void CNeuron::Update(const std::vector<double> &input)
 {
-    if(input.size() != weights.size() - 1)
-    {
-        std::cerr << "Unmatched input dimension and connections" << std::endl;
-        return 0.;
-    }
-
-    double result = 0.;
+    signal = 0.;
     for(unsigned int i = 0; i < input.size(); ++i)
     {
-        result += weights.at(i)*input.at(i);
+        signal += connections.at(i).weight*input.at(i);
     }
 
     // bias part
-    result -= weights.back();
+    signal -= bias;
 
-    return sigmoid(result, 1.0);
+    signal = sigmoid(signal, 1.0);
+}
+
+// let the neuron update its signal from connected neurons
+void CNeuron::Update()
+{
+    signal = 0.;
+    for(auto &conn : connections)
+    {
+        if(conn.neuron)
+        {
+            signal += conn.neuron->signal*conn.weight;
+        }
+    }
+
+    signal = sigmoid(signal, 1.0);
+}
+
+// get weights from all connections and bias
+std::vector<double> CNeuron::GetWeights()
+const
+{
+    std::vector<double> res;
+    res.reserve(connections.size() + 1);
+    for(auto conn : connections)
+    {
+        res.push_back(conn.weight);
+    }
+    res.push_back(bias);
+
+    return res;
 }
 
 // sigmoid function for output
@@ -64,3 +113,9 @@ const
 	return 1./(1. + std::exp(-a/p));
 }
 
+inline double CNeuron::dsigmoid(const double &a, const double &p)
+const
+{
+    double expap = std::exp(-a/p);
+    return 1./p * expap/(1. + expap)/(1. + expap);
+}

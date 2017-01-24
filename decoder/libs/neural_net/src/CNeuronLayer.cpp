@@ -11,34 +11,54 @@
 
 
 // constructor
-CNeuronLayer::CNeuronLayer(unsigned int con_size, unsigned int size)
-: input_size(con_size)
+CNeuronLayer::CNeuronLayer(unsigned int input, unsigned int size)
+: input_size(input)
 {
 	for(unsigned int i = 0; i < size; ++i)
     {
-		neurons.emplace_back(con_size);
+		neurons.emplace_back(input);
+    }
+}
+
+CNeuronLayer::CNeuronLayer(CNeuronLayer &prev_layer, unsigned int size)
+: input_size(prev_layer.GetNeurons().size())
+{
+    for(unsigned int i = 0; i < size; ++i)
+    {
+        neurons.emplace_back(prev_layer.GetNeurons());
+    }
+}
+
+void CNeuronLayer::Connect(CNeuronLayer &prev_layer)
+{
+    for(auto &neuron : neurons)
+    {
+        neuron.Connect(prev_layer.GetNeurons());
     }
 }
 
 // give the layer an input array and get its output array
-std::vector<double> CNeuronLayer::Output(const std::vector<double> &input)
-const
+void CNeuronLayer::Update(const std::vector<double> &input)
 {
-    std::vector<double> result;
     if(input.size() != input_size)
     {
-        std::cerr << "Unmatched input size, expecting " << input_size << " inputs."
+        std::cerr << "Input size " << input.size() << " unmatches expected size "
+                  << input_size << ", abort layer signals update."
                   << std::endl;
-        result.resize(neurons.size(), 0.);
-        return result;
+        return;
     }
 
-    result.reserve(neurons.size());
     for(auto &neuron : neurons)
     {
-        result.push_back(neuron.Output(input));
+        neuron.Update(input);
     }
+}
 
-    return result;
+void CNeuronLayer::Update()
+{
+    for(auto &neuron : neurons)
+    {
+        neuron.Update();
+    }
 }
 
