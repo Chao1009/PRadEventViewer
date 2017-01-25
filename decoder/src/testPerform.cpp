@@ -19,6 +19,7 @@
 using namespace std;
 
 void testHyCalCluster(const string &file, PRadHyCalSystem *sys);
+ostream &operator <<(ostream &os, const PRadBenchMark &timer);
 
 int main(int argc, char *argv[])
 {
@@ -50,7 +51,6 @@ void testHyCalCluster(const string &file, PRadHyCalSystem *sys)
     PRadBenchMark timer;
 
     int count = 0;
-    double time = 0;
     while(dst_parser->Read())
     {
         if(dst_parser->EventType() == PRadDSTParser::Type::event) {
@@ -62,13 +62,9 @@ void testHyCalCluster(const string &file, PRadHyCalSystem *sys)
             ++count;
 
             if(count%PROGRESS_COUNT == 0) {
-                double t = timer.GetElapsedTime();
-                time += t;
-                timer.Reset();
-
                 cout <<"------[ ev " << count << " ]---"
-                     << "---[ " << t << " ms ]---"
-                     << "---[ " << time/(double)count << " ms/ev ]------"
+                     << "---[ " << timer << " ]---"
+                     << "---[ " << timer.GetElapsedTime()/(double)count << " ms/ev ]------"
                      << "\r" << flush;
             }
             sys->Reconstruct(event);
@@ -76,10 +72,23 @@ void testHyCalCluster(const string &file, PRadHyCalSystem *sys)
     }
 
     dst_parser->CloseInput();
-    time += timer.GetElapsedTime();
-    cout << endl;
-    cout << "TIMER: Finished, read and reconstructed " << count << " events, "
-         << "using method " << sys->GetClusterMethodName() << ", "
-         << "took " << time/1000. << " s."
+    cout <<"------[ ev " << count << " ]---"
+         << "---[ " << timer << " ]---"
+         << "---[ " << timer.GetElapsedTime()/(double)count << " ms/ev ]------"
          << endl;
+    cout << "Finished." << endl;
+}
+
+ostream &operator <<(ostream &os, const PRadBenchMark &timer)
+{
+    int t_sec = timer.GetElapsedTime()/1000;
+    int hour = t_sec/3600;
+    int min = (t_sec%3600)/60;
+    int sec = (t_sec%3600)%60;
+
+    os << hour << " hr "
+       << min << " min "
+       << sec << " sec";
+
+    return os;
 }

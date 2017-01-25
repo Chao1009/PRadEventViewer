@@ -306,8 +306,9 @@ const
     for(auto &hit : hits)
     {
         if(count >= max_hits) {
-            std::cout << "Warning, " << count << " hits participate in position "
-                      << "reconstruction, while buffer size is " << max_hits
+            std::cout << "PRad HyCal Cluster Warning: Exceeds the "
+                      << "hits limit (" << max_hits << ") "
+                      << "for  position reconstruction."
                       << std::endl;
             break;
         }

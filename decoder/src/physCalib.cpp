@@ -94,28 +94,37 @@ int main(int argc, char * argv [])
     HyCalZ = 5817.;  //fDetCoor->GetHyCalZ();
 
     //------------------------------analyze events--------------------------------//
-    for (unsigned int i=0; i<inputFiles.size(); i++) {
-        dst_parser->OpenInput(inputFiles[i].c_str());
-        cout<< "open input file:" << inputFiles[i]<<endl;
-        PRadInfoCenter::SetRunNumber(inputFiles[i]);
-        string run_file = "database/db_prad_baseinfo_" + to_string(PRadInfoCenter::GetRunNumber()) + ".dat";
+    for (auto &file : inputFiles)
+    {
+        dst_parser->OpenInput(file.c_str());
+
+        cout << "Open input file: " << file << endl;
+
+        PRadInfoCenter::SetRunNumber(file);
+        string run_file = "database/db_prad_baseinfo_"
+                          + to_string(PRadInfoCenter::GetRunNumber()) + ".dat";
         hycal_sys->ReadRunInfoFile(run_file);
+
         coord_sys->ChooseCoord(PRadInfoCenter::GetRunNumber());
+
         int count = 0;
         int beam_energy_ch = epics->GetChannel("MBSY2C_energy");
         PRadBenchMark timer;
-        while(dst_parser->Read()) {
+        while(dst_parser->Read())
+        {
             if(dst_parser->EventType() == PRadDSTParser::Type::event) {
                 auto event = dst_parser->GetEvent();
+
                 if (!(event.trigger == PHYS_LeadGlassSum || event.trigger == PHYS_TotalSum))
                     continue;
+
                 count++;
                 if (count%PROGRESS_COUNT == 0) {
-                    cout <<"----------event " << count
-                         << "-------[ " << timer << " ]------"
+                    cout <<"------[ ev " << count << " ]---"
+                         << "---[ " << timer << " ]---"
+                         << "---[ " << timer.GetElapsedTime()/(double)count << " ms/ev ]------"
                          << "\r" << flush;
                 }
-                //if (count > (part+1)*1000000) break;
 
                 current_event = &event;
                 //reconstruct HyCal clusters
@@ -189,10 +198,13 @@ int main(int argc, char * argv [])
                 // Ebeam = epics->FindValue(eventNumber,"MBSY2C_energy");
 	        }
         }
+
         dst_parser->CloseInput();
-        cout << endl;
-        cout << "Analyzed " << inputFiles[i]
-             << ", took " << timer
+        cout <<"------[ ev " << count << " ]---"
+             << "---[ " << timer << " ]---"
+             << "---[ " << timer.GetElapsedTime()/(double)count << " ms/ev ]------"
+             << endl;
+        cout << "Analyzed " << file << "."
              << endl;
     }
 
