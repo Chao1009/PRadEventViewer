@@ -41,7 +41,9 @@ int main(int /*argc*/, char * /*argv*/ [])
     PRadBenchMark timer;
 
     //dst_parser->OpenInput("/work/hallb/prad/replay/prad_001288.dst");
-    dst_parser->OpenInput("prad_1310_select.dst");
+    dst_parser->OpenInput("prad_1310.dst");
+    hycal->ChooseRun("prad_1310.dst");
+    std::cout << PRadInfoCenter::GetRunNumber() << std::endl;
     TFile f("prad_1310_match.root", "RECREATE");
     TH1F *hist[3];
     hist[0] = new TH1F("PbGlass R Diff", "Diff in R", 1000, -100, 100);

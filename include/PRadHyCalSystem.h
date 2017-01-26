@@ -3,6 +3,7 @@
 
 #include <string>
 #include <ostream>
+#include <unordered_map>
 #include "PRadEventStruct.h"
 #include "PRadHyCalDetector.h"
 #include "PRadHyCalCluster.h"
@@ -20,25 +21,7 @@
 
 // adc searching speed is important, thus reserve buckets to have unordered_map
 // better formed
-#define ADC_BUCKETS 5000
-// a simple hash function for DAQ configuration
-namespace std
-{
-    template<>
-    struct hash<ChannelAddress>
-    {
-        unsigned int operator()(const ChannelAddress &addr)
-        const
-        {
-            // crate id is 1-6, slot is 1-26, channel is 0-63
-            // thus they can be filled in a 14 bit word
-            // [ 0 0 0 | 0 0 0 0 0 | 0 0 0 0 0 0 ]
-            // [ crate |    slot   |   channel   ]
-            // this simple hash ensures no collision for current setup
-            return ((addr.crate << 11) | (addr.slot << 6) | addr.channel);
-        }
-    };
-}
+#define ADC_BUCKETS 2000
 
 // data structure for finding the calibration period
 struct CalPeriod
@@ -105,9 +88,9 @@ public:
     void ReadRunInfoFile(const std::string &path);
     void ReadTriggerEffFile(const std::string &path);
     void ReadCalPeriodFile(const std::string &path);
-    void UpdateRun(const std::string &path, bool verbose = true);
-    void UpdateRun(int run, bool verbose = true);
-    void UpdateRun(bool verbose = true);
+    void ChooseRun(const std::string &path, bool verbose = true);
+    void ChooseRun(int run, bool verbose = true);
+    void UpdateRunFiles(bool verbose = true);
 
     // connections
     void BuildConnections();

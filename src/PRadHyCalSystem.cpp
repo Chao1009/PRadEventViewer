@@ -206,7 +206,7 @@ void PRadHyCalSystem::Configure(const std::string &path)
     ReadCalPeriodFile(file_path);
 
     int run_number = getDefConfig<int>("Run Number", 1291, false);
-    UpdateRun(run_number, false);
+    ChooseRun(run_number, false);
 }
 
 // read DAQ channel list
@@ -403,7 +403,7 @@ void PRadHyCalSystem::ReadRunInfoFile(const std::string &path)
                 module->GainCorrection((lms_mean - ped_mean)/ref_gain[ref], ref);
         } else {
             std::cout << "PRad HyCal System Warning: Cannot find ADC Channel "
-                      << name << ", skipped status update and gain correction."
+                      << name << ", skip status update and gain correction."
                       << std::endl;
         }
     }
@@ -483,7 +483,7 @@ void PRadHyCalSystem::ReadCalPeriodFile(const std::string &path)
 }
 
 // set run number from data file path and update related file
-void PRadHyCalSystem::UpdateRun(const std::string &path, bool verbose)
+void PRadHyCalSystem::ChooseRun(const std::string &path, bool verbose)
 {
     if(PRadInfoCenter::SetRunNumber(path)) {
         if(verbose) {
@@ -491,12 +491,12 @@ void PRadHyCalSystem::UpdateRun(const std::string &path, bool verbose)
                       << PRadInfoCenter::GetRunNumber()
                       << std::endl;
         }
-        UpdateRun(verbose);
+        UpdateRunFiles(verbose);
     }
 }
 
 // set run number and update related file
-void PRadHyCalSystem::UpdateRun(int run, bool verbose)
+void PRadHyCalSystem::ChooseRun(int run, bool verbose)
 {
     if(PRadInfoCenter::SetRunNumber(run)) {
         if(verbose) {
@@ -504,12 +504,12 @@ void PRadHyCalSystem::UpdateRun(int run, bool verbose)
                       << PRadInfoCenter::GetRunNumber()
                       << std::endl;
         }
-        UpdateRun(verbose);
+        UpdateRunFiles(verbose);
     }
 }
 
 // read run number from information center and update related file
-void PRadHyCalSystem::UpdateRun(bool verbose)
+void PRadHyCalSystem::UpdateRunFiles(bool verbose)
 {
     int run = PRadInfoCenter::GetRunNumber();
 

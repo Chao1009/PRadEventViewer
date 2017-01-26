@@ -115,6 +115,25 @@ struct ChannelAddress
 
 };
 
+// a simple hash function for DAQ configuration
+namespace std
+{
+    template<>
+    struct hash<ChannelAddress>
+    {
+        size_t operator()(const ChannelAddress &addr)
+        const
+        {
+            // crate id is 1-6, slot is 1-26, channel is 0-63
+            // thus they can be filled in a 14 bit word
+            // [ 0 0 0 | 0 0 0 0 0 | 0 0 0 0 0 0 ]
+            // [ crate |    slot   |   channel   ]
+            // this simple hash ensures no collision for current setup
+            return ((addr.crate << 11) | (addr.slot << 6) | addr.channel);
+        }
+    };
+}
+
 struct APVAddress
 {
     int fec_id;

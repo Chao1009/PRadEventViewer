@@ -66,7 +66,7 @@ int main(int argc, char * argv [])
              << " between run " << run[0]
              << " and " << run[1]
              << endl;
-        return -1;
+    //    return -1;
     }
 
     hycal_sys = new PRadHyCalSystem("config/hycal.conf");
@@ -75,8 +75,8 @@ int main(int argc, char * argv [])
     coord_sys = new PRadCoordSystem("database/coordinates.dat");
     det_match = new PRadDetMatch("config/det_match.conf");
     dst_parser = new PRadDSTParser();
-    dst_parser->SetMode(0);
 
+    dst_parser->SetMode(0);
     hycal = hycal_sys->GetDetector();
     gem1 = gem_sys->GetDetector("PRadGEM1");
     gem2 = gem_sys->GetDetector("PRadGEM2");
@@ -100,10 +100,7 @@ int main(int argc, char * argv [])
 
         cout << "Open input file: " << file << endl;
 
-        PRadInfoCenter::SetRunNumber(file);
-        string run_file = "database/db_prad_baseinfo_"
-                          + to_string(PRadInfoCenter::GetRunNumber()) + ".dat";
-        hycal_sys->ReadRunInfoFile(run_file);
+        hycal_sys->ChooseRun(file);
 
         coord_sys->ChooseCoord(PRadInfoCenter::GetRunNumber());
 

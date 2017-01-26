@@ -11,7 +11,9 @@ CC            = gcc
 CXX           = g++
 FORTRAN       = gfortran
 FFLAGS        = -fPIC
-CXXFLAGS      = -std=c++11 -O2 -g -pipe -Wall -m64 -mtune=generic -fPIC
+CXXFLAGS      = -std=c++11 -O1 -g -pipe -Wall -m64 -mtune=generic -fPIC \
+				-fstack-protector-strong --param=ssp-buffer-size=4 \
+				-grecord-gcc-switches -mtune=generic -fPIC
 INCPATH       = -Iinclude -I$(PRAD_PATH)/include -I$(PRAD_LIBS)/include \
 				-I$(ROOTSYS)/include
 DEL_FILE      = rm -f

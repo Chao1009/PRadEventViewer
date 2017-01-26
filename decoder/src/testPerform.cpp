@@ -44,7 +44,7 @@ void testHyCalCluster(const string &file, PRadHyCalSystem *sys)
 {
     PRadDSTParser *dst_parser = new PRadDSTParser();
 
-    sys->UpdateRun(file);
+    sys->ChooseRun(file);
     cout << "Test HyCal Clustering Performance for file " << file << endl;
     cout << "Using method " << sys->GetClusterMethodName() << endl;
 

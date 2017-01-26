@@ -125,6 +125,7 @@ bool PRadInfoCenter::SetRunNumber(const std::string &path)
 {
     std::string file_name = ConfigParser::decompose_path(path).name;
     int run = ConfigParser::find_integer(file_name);
+
     if(run > 0 && Instance().run_info.run_number != run) {
         Instance().run_info.run_number = run;
         return true;
