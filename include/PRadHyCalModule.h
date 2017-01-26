@@ -90,6 +90,7 @@ public:
     void SetLayout(const Layout &lay) {layout = lay;};
     void SetLayoutFlag(unsigned int &flag) {layout.flag = flag;};
     void SetCalibConst(const PRadCalibConst &c) {cal_const = c;};
+    void SetTriggerEfficiency(const double &eff) {trigger_eff = eff;};
     void GainCorrection(const double &g, const int &ref) {cal_const.GainCorrection(g, ref);};
 
     // energy related
@@ -128,6 +129,7 @@ public:
     double GetNonLinearConst() const {return cal_const.non_linear;};
     double GetCalibrationEnergy() const {return cal_const.base_energy;};
     double GetReferenceGain(int ref) const {return cal_const.GetRefGain(ref);};
+    double GetTriggerEfficiency() const {return trigger_eff;};
     PRadTDCChannel *GetTDC() const;
 
     // compare operator
@@ -151,6 +153,7 @@ protected:
     Geometry geometry;
     Layout layout;
     PRadCalibConst cal_const;
+    double trigger_eff;
 };
 
 std::ostream &operator <<(std::ostream &os, const PRadHyCalModule &m);

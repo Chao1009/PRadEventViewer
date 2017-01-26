@@ -175,6 +175,9 @@ void PRadHyCalSystem::Configure(const std::string &path)
 
     ReadRunInfoFile(GetConfig<std::string>("Run Info File"));
 
+    // trigger efficiency
+    ReadTriggerEffFile(GetConfig<std::string>("Trigger Efficiency Map"));
+
     // reconstruction configuration
     SetClusterMethod(GetConfig<std::string>("Cluster Method"));
     if(recon)
@@ -407,6 +410,37 @@ void PRadHyCalSystem::ReadRunInfoFile(const std::string &path)
         method->UpdateModuleStatus(hycal->GetModuleList());
     }
 #endif
+}
+
+// update the trigger efficiency
+void PRadHyCalSystem::ReadTriggerEffFile(const std::string &path)
+{
+    if(path.empty())
+        return;
+
+    ConfigParser c_parser;
+    if(!c_parser.ReadFile(path)) {
+        std::cerr << "PRad HyCal System Error: Failed to read trigger efficiency file "
+                  << "\"" << path << "\""
+                  << std::endl;
+        return;
+    }
+
+    std::string name;
+    double eff;
+    while(c_parser.ParseLine())
+    {
+        if(!c_parser.CheckElements(2))
+            continue;
+
+        c_parser >> name >> eff;
+
+        PRadHyCalModule *module = GetModule(name);
+
+        if(module) {
+            module->SetTriggerEfficiency(eff);
+        }
+    }
 }
 
 // update the event info to DAQ system

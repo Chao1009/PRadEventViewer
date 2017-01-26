@@ -62,6 +62,7 @@ public:
     void Configure(const std::string &path);
     void ReadChannelList(const std::string &path);
     void ReadRunInfoFile(const std::string &path);
+    void ReadTriggerEffFile(const std::string &path);
 
     // connections
     void BuildConnections();
