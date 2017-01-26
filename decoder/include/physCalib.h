@@ -117,7 +117,6 @@ float GetExpectedEFromProfile(float& dx, float& dy);
 float GetElossIonElectron(float &theta, float& E);
 int   IsNeighborToInner(int& id);
 bool MatchedGEM(const CombinedHit &hit);
-ostream &operator <<(ostream &os, const PRadBenchMark &timer);
 
 //histograms
 TH1F *h_beam_e;

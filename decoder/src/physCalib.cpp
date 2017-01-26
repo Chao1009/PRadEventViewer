@@ -66,7 +66,7 @@ int main(int argc, char * argv [])
              << " between run " << run[0]
              << " and " << run[1]
              << endl;
-    //    return -1;
+        return -1;
     }
 
     hycal_sys = new PRadHyCalSystem("config/hycal.conf");
@@ -89,7 +89,6 @@ int main(int argc, char * argv [])
     string out_file = "cal" + to_string(run[0]) + "_" + to_string(run[1]) + ".root";
     TFile *f = new TFile((out_dir + out_file).c_str(), "RECREATE");
 
-    //TFile *f = new TFile(Form("test_GEMcali_%d.root", part), "RECREATE");
     InitHistogram();  //initialize global histograms
     HyCalZ = 5817.;  //fDetCoor->GetHyCalZ();
 
@@ -118,7 +117,7 @@ int main(int argc, char * argv [])
                 count++;
                 if (count%PROGRESS_COUNT == 0) {
                     cout <<"------[ ev " << count << " ]---"
-                         << "---[ " << timer << " ]---"
+                         << "---[ " << timer.GetElapsedTimeStr() << " ]---"
                          << "---[ " << timer.GetElapsedTime()/(double)count << " ms/ev ]------"
                          << "\r" << flush;
                 }
@@ -198,7 +197,7 @@ int main(int argc, char * argv [])
 
         dst_parser->CloseInput();
         cout <<"------[ ev " << count << " ]---"
-             << "---[ " << timer << " ]---"
+             << "---[ " << timer.GetElapsedTimeStr() << " ]---"
              << "---[ " << timer.GetElapsedTime()/(double)count << " ms/ev ]------"
              << endl;
         cout << "Analyzed " << file << "."
@@ -873,16 +872,3 @@ bool MatchedGEM(const CombinedHit &hit)
     return TEST_BIT(hit.flag, kGEM1Match) || TEST_BIT(hit.flag, kGEM2Match);
 }
 
-ostream &operator <<(ostream &os, const PRadBenchMark &timer)
-{
-    int t_sec = timer.GetElapsedTime()/1000;
-    int hour = t_sec/3600;
-    int min = (t_sec%3600)/60;
-    int sec = (t_sec%3600)%60;
-
-    os << hour << " hr "
-       << min << " min "
-       << sec << " sec";
-
-    return os;
-}

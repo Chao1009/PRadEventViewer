@@ -20,7 +20,6 @@
 using namespace std;
 
 void testHyCalCluster(const string &file, PRadHyCalSystem *sys);
-ostream &operator <<(ostream &os, const PRadBenchMark &timer);
 
 int main(int argc, char *argv[])
 {
@@ -65,7 +64,7 @@ void testHyCalCluster(const string &file, PRadHyCalSystem *sys)
 
             if(count%PROGRESS_COUNT == 0) {
                 cout <<"------[ ev " << count << " ]---"
-                     << "---[ " << timer << " ]---"
+                     << "---[ " << timer.GetElapsedTimeStr() << " ]---"
                      << "---[ " << timer.GetElapsedTime()/(double)count << " ms/ev ]------"
                      << "\r" << flush;
             }
@@ -75,22 +74,8 @@ void testHyCalCluster(const string &file, PRadHyCalSystem *sys)
 
     dst_parser->CloseInput();
     cout <<"------[ ev " << count << " ]---"
-         << "---[ " << timer << " ]---"
+         << "---[ " << timer.GetElapsedTimeStr() << " ]---"
          << "---[ " << timer.GetElapsedTime()/(double)count << " ms/ev ]------"
          << endl;
     cout << "Finished." << endl;
-}
-
-ostream &operator <<(ostream &os, const PRadBenchMark &timer)
-{
-    int t_sec = timer.GetElapsedTime()/1000;
-    int hour = t_sec/3600;
-    int min = (t_sec%3600)/60;
-    int sec = (t_sec%3600)%60;
-
-    os << hour << " hr "
-       << min << " min "
-       << sec << " sec";
-
-    return os;
 }

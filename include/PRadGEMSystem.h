@@ -20,7 +20,7 @@
 
 // fec id should be consecutive from 0
 // enlarge this value if there are more FECs
-#define MAX_FEC_ID 128
+#define MAX_FEC_ID 12
 
 class PRadGEMSystem : public ConfigObject
 {
@@ -71,7 +71,7 @@ public:
     void SavePedestal(const std::string &path) const;
     void SaveHistograms(const std::string &path) const;
 
-    PRadGEMCluster *GetClusterMethod() const {return gem_recon;};
+    PRadGEMCluster *GetClusterMethod() {return &gem_recon;};
     PRadGEMDetector *GetDetector(const int &id) const;
     PRadGEMDetector *GetDetector(const std::string &name) const;
     PRadGEMFEC *GetFEC(const int &id) const;
@@ -80,8 +80,8 @@ public:
 
     std::vector<GEM_Data> GetZeroSupData() const;
     std::vector<PRadGEMAPV*> GetAPVList() const;
-    std::vector<PRadGEMFEC*> GetFECList() const {return fec_list;};
-    const std::vector<PRadGEMDetector*> &GetDetectorList() const {return det_list;};
+    std::vector<PRadGEMFEC*> GetFECList() const;
+    std::vector<PRadGEMDetector*> GetDetectorList() const;
 
 private:
     // private member functions
@@ -91,21 +91,18 @@ private:
     void buildAPV(std::list<ConfigValue> &apv_args);
 
 private:
-    PRadGEMCluster *gem_recon;
+    PRadGEMCluster gem_recon;
     bool PedestalMode;
-    std::vector<PRadGEMDetector*> det_list;
-    std::vector<PRadGEMFEC*> fec_list;
 
     // maps
     std::vector<PRadGEMFEC*> daq_slots;
     std::vector<PRadGEMDetector*> det_slots;
     std::unordered_map<std::string, PRadGEMDetector*> det_name_map;
 
+    // default values for creating APV
     unsigned int def_ts;
     float def_cth;
     float def_zth;
-
-    // cross talk threshold
     float def_ctth;
 
 #ifdef MULTI_THREAD

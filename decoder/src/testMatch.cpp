@@ -22,50 +22,80 @@
 #include <string>
 #include <vector>
 
+#define PROGRESS_COUNT 10000
+
 using namespace std;
 
-int main(int /*argc*/, char * /*argv*/ [])
-{
+PRadEPICSystem *epics;
+PRadHyCalSystem *hycal;
+PRadGEMSystem *gem;
+PRadCoordSystem *coord_sys;
+PRadDetMatch *det_match;
+void testMatch(const string &path);
+ostream &operator <<(ostream &os, const PRadBenchMark &timer);
 
-    PRadEPICSystem *epics = new PRadEPICSystem("config/epics_channels.conf");
-    PRadHyCalSystem *hycal = new PRadHyCalSystem("config/hycal.conf");
-    PRadGEMSystem *gem = new PRadGEMSystem("config/gem.conf");
+int main(int argc, char *argv[])
+{
+    if(argc < 2) {
+        cout << "usage: testMatch <file1> <file2> ..." << endl;
+        return 0;
+    }
+
+    // initialize objects
+    epics = new PRadEPICSystem("config/epics_channels.conf");
+    hycal = new PRadHyCalSystem("config/hycal.conf");
+    gem = new PRadGEMSystem("config/gem.conf");
+    coord_sys = new PRadCoordSystem("database/coordinates.dat");
+    det_match = new PRadDetMatch("config/det_match.conf");
+
+    for(int i = 1; i < argc; ++i)
+    {
+        string file = argv[i];
+        testMatch(file);
+    }
+
+    return 0;
+}
+
+void testMatch(const string &path)
+{
+    hycal->ChooseRun(path);
+    coord_sys->ChooseCoord(PRadInfoCenter::GetRunNumber());
 
     PRadDSTParser *dst_parser = new PRadDSTParser();
-    dst_parser->EnableMode(PRadDSTParser::Mode::update_run_info);
+    dst_parser->OpenInput(path);
 
-    // coordinate system and detector match system
-    PRadCoordSystem *coord_sys = new PRadCoordSystem("database/coordinates.dat");
-    PRadDetMatch *det_match = new PRadDetMatch("config/det_match.conf");
-
-    PRadBenchMark timer;
-
-    //dst_parser->OpenInput("/work/hallb/prad/replay/prad_001288.dst");
-    dst_parser->OpenInput("prad_1310.dst");
-    hycal->ChooseRun("prad_1310.dst");
-    std::cout << PRadInfoCenter::GetRunNumber() << std::endl;
-    TFile f("prad_1310_match.root", "RECREATE");
+    string outfile = ConfigParser::decompose_path(path).name + "_match.root";
+    TFile f(outfile.c_str(), "RECREATE");
     TH1F *hist[3];
     hist[0] = new TH1F("PbGlass R Diff", "Diff in R", 1000, -100, 100);
     hist[1] = new TH1F("PbWO4 R Diff", "Diff in R", 1000, -100, 100);
     hist[2] = new TH1F("Trans R Diff", "Diff in R", 1000, -100, 100);
     TH2F *hist2d = new TH2F("R Diff", "HyCal - GEM", 800, 0, 800, 200, -100, 100);
+    TH2F *histev = new TH2F("E vs theta", "Event Distribution", 200, 0, 10, 200, 0, 1400);
 
     PRadHyCalDetector *hycal_det = hycal->GetDetector();
     PRadGEMDetector *gem_det1 = gem->GetDetector("PRadGEM1");
     PRadGEMDetector *gem_det2 = gem->GetDetector("PRadGEM2");
 
+    PRadBenchMark timer;
+    int count = 0;
+
     while(dst_parser->Read())
     {
         if(dst_parser->EventType() == PRadDSTParser::Type::event) {
-            // you can push this event into data handler
-            // handler->GetEventData().push_back(dst_parser->GetEvent()
-            // or you can just do something with this event and discard it
             auto &event = dst_parser->GetEvent();
 
             // only interested in physics event
             if(!event.is_physics_event())
                 continue;
+
+            if((++count)%PROGRESS_COUNT == 0) {
+                cout <<"------[ ev " << count << " ]---"
+                     << "---[ " << timer.GetElapsedTimeStr() << " ]---"
+                     << "---[ " << timer.GetElapsedTime()/(double)count << " ms/ev ]------"
+                     << "\r" << flush;
+            }
 
             // update run information
             PRadInfoCenter::Instance().UpdateInfo(event);
@@ -115,6 +145,8 @@ int main(int /*argc*/, char * /*argv*/ [])
                 float dr = r - sqrt(x*x + y*y);
                 hist[hidx]->Fill(dr);
                 hist2d->Fill(r, dr);
+                float angle = atan(sqrt(x*x + y*y)/hit.z)/3.14159*180.;
+                histev->Fill(angle, hit.E);
             }
 
         } else if(dst_parser->EventType() == PRadDSTParser::Type::epics) {
@@ -125,6 +157,10 @@ int main(int /*argc*/, char * /*argv*/ [])
 
     dst_parser->CloseInput();
 
+    cout <<"------[ ev " << count << " ]---"
+         << "---[ " << timer.GetElapsedTimeStr() << " ]---"
+         << "---[ " << timer.GetElapsedTime()/(double)count << " ms/ev ]------"
+         << endl;
     cout << "TIMER: Finished, took " << timer.GetElapsedTime() << " ms" << endl;
     cout << PRadInfoCenter::GetBeamCharge() << endl;
     cout << PRadInfoCenter::GetLiveTime() << endl;
@@ -134,8 +170,6 @@ int main(int /*argc*/, char * /*argv*/ [])
         hist[i]->Write();
     }
     hist2d->Write();
+    histev->Write();
     f.Close();
-//    handler->WriteToDST("prad_001323_0-10.dst");
-    //handler->PrintOutEPICS();
-    return 0;
 }

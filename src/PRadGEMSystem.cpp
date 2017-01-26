@@ -24,8 +24,6 @@
 #include "TFile.h"
 #include "TH1.h"
 
-using namespace std;
-
 
 
 //============================================================================//
@@ -33,9 +31,8 @@ using namespace std;
 //============================================================================//
 
 // constructor
-PRadGEMSystem::PRadGEMSystem(const string &config_file, int daq_cap, int det_cap)
-: gem_recon(new PRadGEMCluster()), PedestalMode(false),
-  def_ts(3), def_cth(20.), def_zth(5), def_ctth(8)
+PRadGEMSystem::PRadGEMSystem(const std::string &config_file, int daq_cap, int det_cap)
+: PedestalMode(false), def_ts(3), def_cth(20.), def_zth(5.), def_ctth(8.)
 {
     daq_slots.resize(daq_cap, nullptr);
     det_slots.resize(det_cap, nullptr);
@@ -50,12 +47,10 @@ PRadGEMSystem::PRadGEMSystem(const string &config_file, int daq_cap, int det_cap
 // Planes and APVs
 PRadGEMSystem::PRadGEMSystem(const PRadGEMSystem &that)
 : ConfigObject(that),
-  gem_recon(new PRadGEMCluster(*that.gem_recon)), PedestalMode(that.PedestalMode),
+  gem_recon(that.gem_recon), PedestalMode(that.PedestalMode),
   def_ts(that.def_ts), def_cth(that.def_cth), def_zth(that.def_zth),
   def_ctth(that.def_ctth)
 {
-    gem_recon = new PRadGEMCluster(*that.gem_recon);
-
     // copy daq system first
     for(auto &fec : that.daq_slots)
     {
@@ -88,42 +83,43 @@ PRadGEMSystem::PRadGEMSystem(const PRadGEMSystem &that)
             }
         }
     }
-    RebuildDAQMap();
+
     RebuildDetectorMap();
 }
 
 // move constructor
 PRadGEMSystem::PRadGEMSystem(PRadGEMSystem &&that)
 : ConfigObject(that),
-  PedestalMode(that.PedestalMode), det_list(move(that.det_list)),
-  fec_list(move(that.fec_list)), daq_slots(move(that.daq_slots)),
-  det_slots(move(that.det_slots)), det_name_map(move(that.det_name_map)),
-  def_ts(that.def_ts), def_cth(that.def_cth), def_zth(that.def_zth),
-  def_ctth(that.def_ctth)
+  gem_recon(std::move(that.gem_recon)), PedestalMode(that.PedestalMode),
+  daq_slots(std::move(that.daq_slots)), det_slots(std::move(that.det_slots)),
+  det_name_map(std::move(that.det_name_map)), def_ts(that.def_ts),
+  def_cth(that.def_cth), def_zth(that.def_zth), def_ctth(that.def_ctth)
 {
-    gem_recon = that.gem_recon;
-    that.gem_recon = nullptr;
-
     // reset the system for all components
-    for(auto &fec : fec_list)
-        fec->SetSystem(this);
+    for(auto &fec : daq_slots)
+    {
+        if(fec)
+            fec->SetSystem(this);
+    }
 
-    for(auto &det : det_list)
-        det->SetSystem(this);
+    for(auto &det : det_slots)
+    {
+        if(det)
+            det->SetSystem(this);
+    }
 }
 
 // desctructor
 PRadGEMSystem::~PRadGEMSystem()
 {
     Clear();
-    delete gem_recon;
 }
 
 // copy assignment operator
 PRadGEMSystem &PRadGEMSystem::operator =(const PRadGEMSystem &rhs)
 {
     PRadGEMSystem that(rhs); // use copy constructor
-    *this = move(that); // use move assignment operator
+    *this = std::move(that); // use move assignment operator
     return *this;
 }
 
@@ -134,28 +130,32 @@ PRadGEMSystem &PRadGEMSystem::operator =(PRadGEMSystem &&rhs)
 
     // release current resources
     Clear();
-    delete gem_recon;
 
     // move everything here
-    gem_recon = rhs.gem_recon;
-    rhs.gem_recon = nullptr;
+    gem_recon = std::move(rhs.gem_recon);
     PedestalMode = rhs.PedestalMode;
-    det_list = move(rhs.det_list);
-    fec_list = move(rhs.fec_list);
-    daq_slots = move(rhs.daq_slots);
-    det_slots = move(rhs.det_slots);
-    det_name_map = move(rhs.det_name_map);
+
+    daq_slots = std::move(rhs.daq_slots);
+    det_slots = std::move(rhs.det_slots);
+    det_name_map = std::move(rhs.det_name_map);
+
     def_ts = rhs.def_ts;
     def_cth = rhs.def_cth;
     def_zth = rhs.def_zth;
     def_ctth = rhs.def_ctth;
 
     // reset the system for all components
-    for(auto &fec : fec_list)
-        fec->SetSystem(this);
+    for(auto &fec : daq_slots)
+    {
+        if(fec)
+            fec->SetSystem(this);
+    }
 
-    for(auto &det : det_list)
-        det->SetSystem(this);
+    for(auto &det : det_slots)
+    {
+        if(det)
+            det->SetSystem(this);
+    }
 
     return *this;
 }
@@ -167,7 +167,7 @@ PRadGEMSystem &PRadGEMSystem::operator =(PRadGEMSystem &&rhs)
 //============================================================================//
 
 // configure this class
-void PRadGEMSystem::Configure(const string &path)
+void PRadGEMSystem::Configure(const std::string &path)
 {
     bool verbose = false;
 
@@ -181,8 +181,7 @@ void PRadGEMSystem::Configure(const string &path)
     def_zth = getDefConfig<float>("Default Zero Suppression Threshold", 5, verbose);
     def_ctth = getDefConfig<float>("Default Cross Talk Threshold", 8, verbose);
 
-    if(gem_recon)
-        gem_recon->Configure(GetConfig<std::string>("GEM Cluster Configuration"));
+    gem_recon.Configure(GetConfig<std::string>("GEM Cluster Configuration"));
 
     try{
         ReadMapFile(GetConfig<std::string>("GEM Map"));
@@ -205,8 +204,6 @@ void PRadGEMSystem::Clear()
         delete fec;
     }
 
-    fec_list.clear();
-
     // Detectors removal
     for(auto &det : det_slots)
     {
@@ -216,12 +213,11 @@ void PRadGEMSystem::Clear()
         delete det;
     }
 
-    det_list.clear();
     det_name_map.clear();
 }
 
 // Read the map file
-void PRadGEMSystem::ReadMapFile(const string &path) throw(PRadException)
+void PRadGEMSystem::ReadMapFile(const std::string &path) throw(PRadException)
 {
     if(path.empty())
         return;
@@ -238,31 +234,31 @@ void PRadGEMSystem::ReadMapFile(const string &path) throw(PRadException)
 
     // we accept 4 types of elements
     // detector, plane, fec, apv
-    vector<string> types = {"DET", "PLN", "FEC", "APV"};
-    vector<int> expect_args = {3, 6, 2, 8};
-    vector<int> option_args = {0, 0, 0, 4};
-    // this vector is to store all the following arguments
-    vector<list<ConfigValue>> args[types.size()];
+    std::vector<std::string> types = {"DET", "PLN", "FEC", "APV"};
+    std::vector<int> expect_args = {3, 6, 2, 8};
+    std::vector<int> option_args = {0, 0, 0, 4};
+    // this std::vector is to store all the following arguments
+    std::vector<std::list<ConfigValue>> args[types.size()];
 
     // read all the elements in
     while(c_parser.ParseLine())
     {
-        string key = c_parser.TakeFirst();
+        std::string key = c_parser.TakeFirst();
         uint32_t i = 0;
         for(; i < types.size(); ++i)
         {
             if(ConfigParser::strcmp_case_insensitive(key, types.at(i))) {
                 if(c_parser.CheckElements(expect_args.at(i), option_args.at(i)))
-                    args[i].push_back(c_parser.TakeAll<list>());
+                    args[i].push_back(c_parser.TakeAll<std::list>());
                 break;
             }
         }
 
         if(i >= types.size()) { // did not find any type
-            cout << "PRad GEM System Warning: Undefined element type " << key
-                 << " in configuration file "
-                 << "\"" << path << "\""
-                 << endl;
+            std::cout << "PRad GEM System Warning: Undefined element type "
+                      << key << " in configuration file "
+                      << "\"" << path << "\""
+                      << std::endl;
         }
     }
 
@@ -283,12 +279,11 @@ void PRadGEMSystem::ReadMapFile(const string &path) throw(PRadException)
 
     // Rebuilding the maps just helps sort the lists, so they won't depend on
     // the orders in configuration map
-    RebuildDAQMap();
     RebuildDetectorMap();
 }
 
 // Load pedestal file and update all APVs' pedestal
-void PRadGEMSystem::ReadPedestalFile(const string &path) throw(PRadException)
+void PRadGEMSystem::ReadPedestalFile(const std::string &path) throw(PRadException)
 {
     if(path.empty())
         return;
@@ -313,10 +308,10 @@ void PRadGEMSystem::ReadPedestalFile(const string &path) throw(PRadException)
             apv = GetAPV(fec, adc);
 
             if(apv == nullptr) {
-                cout << "PRad GEM System Warning: Cannot find APV "
-                     << fec <<  ", " << adc
-                     << " , skip updating its pedestal."
-                     << endl;
+                std::cout << "PRad GEM System Warning: Cannot find APV "
+                          << fec <<  ", " << adc
+                          << " , skip updating its pedestal."
+                          << std::endl;
             }
         } else { // different adc channel in this APV
             float offset, noise;
@@ -336,21 +331,21 @@ bool PRadGEMSystem::Register(PRadGEMDetector *det)
 
     if((uint32_t)det->GetDetID() >= det_slots.size())
     {
-        cerr << "GEM System Error: Failed to add detector "
-             << det->GetName()
-             << " (" << det->GetDetID() << ")"
-             << ", exceeds the maximum capacity."
-             << endl;
+        std::cerr << "GEM System Error: Failed to add detector "
+                  << det->GetName()
+                  << " (" << det->GetDetID() << ")"
+                  << ", exceeds the maximum capacity."
+                  << std::endl;
         return false;
     }
 
     if(det_slots.at(det->GetDetID()) != nullptr)
     {
-        cerr << "GEM System Error: Failed to add detector "
-             << det->GetName()
-             << " (" << det->GetDetID() << ")"
-             << ", the same detector already exists in the system."
-             << endl;
+        std::cerr << "GEM System Error: Failed to add detector "
+                  << det->GetName()
+                  << " (" << det->GetDetID() << ")"
+                  << ", the same detector already exists in the system."
+                  << std::endl;
         return false;
     }
 
@@ -367,18 +362,18 @@ bool PRadGEMSystem::Register(PRadGEMFEC *fec)
 
     if((uint32_t)fec->GetID() >= daq_slots.size())
     {
-        cerr << "GEM System Error: Failed to add FEC id " << fec->GetID()
-             << ", it exceeds current DAQ capacity " << daq_slots.size()
-             << "."
-             << endl;
+        std::cerr << "GEM System Error: Failed to add FEC id " << fec->GetID()
+                  << ", it exceeds current DAQ capacity " << daq_slots.size()
+                  << "."
+                  << std::endl;
         return false;
     }
 
     if(daq_slots.at(fec->GetID()) != nullptr)
     {
-        cerr << "GEM System Error: Failed to add FEC id " << fec->GetID()
-             << ", FEC with the same id already exists in the system."
-             << endl;
+        std::cerr << "GEM System Error: Failed to add FEC id " << fec->GetID()
+                  << ", FEC with the same id already exists in the system."
+                  << std::endl;
         return false;
     }
 
@@ -436,8 +431,6 @@ void PRadGEMSystem::DisconnectFEC(int fec_id, bool force_disconn)
         fec->UnsetSystem(true);
 
     fec = nullptr;
-    // rebuild maps
-    RebuildDAQMap();
 }
 
 void PRadGEMSystem::RemoveFEC(int fec_id)
@@ -451,15 +444,11 @@ void PRadGEMSystem::RemoveFEC(int fec_id)
 
     fec->UnsetSystem(true);
     delete fec, fec = nullptr;
-
-    // rebuild maps
-    RebuildDAQMap();
 }
 
 // rebuild detector related maps
 void PRadGEMSystem::RebuildDetectorMap()
 {
-    det_list.clear();
     det_name_map.clear();
 
     for(auto &det : det_slots)
@@ -467,22 +456,7 @@ void PRadGEMSystem::RebuildDetectorMap()
         if(det == nullptr)
             continue;
 
-        det_list.push_back(det);
         det_name_map[det->GetName()] = det;
-    }
-}
-
-// rebuild daq related maps
-void PRadGEMSystem::RebuildDAQMap()
-{
-    fec_list.clear();
-
-    for(auto &fec : daq_slots)
-    {
-        if(fec == nullptr)
-            continue;
-
-        fec_list.push_back(fec);
     }
 }
 
@@ -497,12 +471,12 @@ const
 }
 
 // find detector by its name
-PRadGEMDetector *PRadGEMSystem::GetDetector(const string &name)
+PRadGEMDetector *PRadGEMSystem::GetDetector(const std::string &name)
 const
 {
     auto it = det_name_map.find(name);
     if(it == det_name_map.end()) {
-        cerr << "GEM System: Cannot find detector " << name << endl;
+        std::cerr << "GEM System: Cannot find detector " << name << std::endl;
         return nullptr;
     }
     return it->second;
@@ -567,25 +541,32 @@ void PRadGEMSystem::FillRawData(const GEMRawData &raw, EventData &event)
 // clear all APVs' raw data space
 void PRadGEMSystem::Reset()
 {
-    for(auto &fec : fec_list)
+    for(auto &fec : daq_slots)
     {
+        if(!fec)
+            continue;
+
         fec->APVControl(&PRadGEMAPV::ClearData);
         fec->APVControl(&PRadGEMAPV::ResetPedHist);
     }
 
-    for(auto &det : det_list)
+    for(auto &det : det_slots)
     {
+        if(!det)
+            continue;
         det->Reset();
     }
 }
 
 // fill zero suppressed data and re-collect these data in GEM_Data format
-void PRadGEMSystem::FillZeroSupData(const vector<GEMZeroSupData> &data_pack, EventData &event)
+void PRadGEMSystem::FillZeroSupData(const std::vector<GEMZeroSupData> &data_pack,
+                                    EventData &event)
 {
     // clear all the APVs' hits
-    for(auto &fec : fec_list)
+    for(auto &fec : daq_slots)
     {
-        fec->APVControl(&PRadGEMAPV::ResetHitPos);
+        if(fec)
+            fec->APVControl(&PRadGEMAPV::ResetHitPos);
     }
 
     // fill in the online zero-suppressed data
@@ -596,9 +577,10 @@ void PRadGEMSystem::FillZeroSupData(const vector<GEMZeroSupData> &data_pack, Eve
         locker.lock();
 #endif
     // collect these zero-suppressed hits
-    for(auto &fec : fec_list)
+    for(auto &fec : daq_slots)
     {
-        fec->APVControl(&PRadGEMAPV::CollectZeroSupHits, event.get_gem_data());
+        if(fec)
+            fec->APVControl(&PRadGEMAPV::CollectZeroSupHits, event.get_gem_data());
     }
 #ifdef MULTI_THREAD
         locker.unlock();
@@ -619,9 +601,10 @@ void PRadGEMSystem::FillZeroSupData(const GEMZeroSupData &data)
 void PRadGEMSystem::ChooseEvent(const EventData &data)
 {
     // clear all the APVs' hits
-    for(auto &fec : fec_list)
+    for(auto &fec : daq_slots)
     {
-        fec->APVControl(&PRadGEMAPV::ClearData);
+        if(fec)
+            fec->APVControl(&PRadGEMAPV::ClearData);
     }
 
     for(auto &hit : data.gem_data)
@@ -631,9 +614,10 @@ void PRadGEMSystem::ChooseEvent(const EventData &data)
             apv->FillZeroSupData(hit.addr.strip, hit.values);
     }
 
-    for(auto &det : det_list)
+    for(auto &det : det_slots)
     {
-        det->CollectHits();
+        if(det)
+            det->CollectHits();
     }
 }
 
@@ -650,9 +634,10 @@ void PRadGEMSystem::Reconstruct(const EventData &data)
 
 void PRadGEMSystem::Reconstruct()
 {
-    for(auto &det : det_list)
+    for(auto &det : det_slots)
     {
-        det->Reconstruct(gem_recon);
+        if(det)
+            det->Reconstruct(&gem_recon);
     }
 }
 
@@ -660,27 +645,29 @@ void PRadGEMSystem::Reconstruct()
 // this requires pedestal mode is on, otherwise there won't be any data to fit
 void PRadGEMSystem::FitPedestal()
 {
-    for(auto &fec : fec_list)
+    for(auto &fec : daq_slots)
     {
-        fec->APVControl(&PRadGEMAPV::FitPedestal);
+        if(fec)
+            fec->APVControl(&PRadGEMAPV::FitPedestal);
     }
 }
 
 // save pedestal file for all APVs
-void PRadGEMSystem::SavePedestal(const string &name)
+void PRadGEMSystem::SavePedestal(const std::string &name)
 const
 {
-    ofstream in_file(name);
+    std::ofstream in_file(name);
 
     if(!in_file.is_open()) {
-        cerr << "GEM System: Failed to save pedestal, file "
-             << name << " cannot be opened."
-             << endl;
+        std::cerr << "GEM System: Failed to save pedestal, file "
+                  << name << " cannot be opened."
+                  << std::endl;
     }
 
-    for(auto &fec : fec_list)
+    for(auto &fec : daq_slots)
     {
-        fec->APVControl(&PRadGEMAPV::PrintOutPedestal, in_file);
+        if(fec)
+            fec->APVControl(&PRadGEMAPV::PrintOutPedestal, in_file);
     }
 }
 
@@ -693,8 +680,11 @@ void PRadGEMSystem::SetPedestalMode(const bool &m)
 {
     PedestalMode = m;
 
-    for(auto &fec : fec_list)
+    for(auto &fec : daq_slots)
     {
+        if(!fec)
+            continue;
+
         if(m)
             fec->APVControl(&PRadGEMAPV::CreatePedHist);
         else
@@ -703,14 +693,15 @@ void PRadGEMSystem::SetPedestalMode(const bool &m)
 }
 
 // collect the zero suppressed data from APV
-vector<GEM_Data> PRadGEMSystem::GetZeroSupData()
+std::vector<GEM_Data> PRadGEMSystem::GetZeroSupData()
 const
 {
-    vector<GEM_Data> gem_data;
+    std::vector<GEM_Data> gem_data;
 
-    for(auto &fec : fec_list)
+    for(auto &fec : daq_slots)
     {
-        fec->APVControl(&PRadGEMAPV::CollectZeroSupHits, gem_data);
+        if(fec)
+            fec->APVControl(&PRadGEMAPV::CollectZeroSupHits, gem_data);
     }
 
     return gem_data;
@@ -719,45 +710,51 @@ const
 // change the common mode threshold level for all APVs
 void PRadGEMSystem::SetUnivCommonModeThresLevel(const float &thres)
 {
-    for(auto &fec : fec_list)
+    for(auto &fec : daq_slots)
     {
-        fec->APVControl(&PRadGEMAPV::SetCommonModeThresLevel, thres);
+        if(fec)
+            fec->APVControl(&PRadGEMAPV::SetCommonModeThresLevel, thres);
     }
 }
 
 // change the zero suppression threshold level for all APVs
 void PRadGEMSystem::SetUnivZeroSupThresLevel(const float &thres)
 {
-    for(auto &fec : fec_list)
+    for(auto &fec : daq_slots)
     {
-        fec->APVControl(&PRadGEMAPV::SetZeroSupThresLevel, thres);
+        if(fec)
+            fec->APVControl(&PRadGEMAPV::SetZeroSupThresLevel, thres);
     }
 }
 
 // change the time sample for all APVs
 void PRadGEMSystem::SetUnivTimeSample(const uint32_t &ts)
 {
-    for(auto &fec : fec_list)
+    for(auto &fec : daq_slots)
     {
-        fec->APVControl(&PRadGEMAPV::SetTimeSample, ts);
+        if(fec)
+            fec->APVControl(&PRadGEMAPV::SetTimeSample, ts);
     }
 }
 
 // save all APVs' histograms into a root file
-void PRadGEMSystem::SaveHistograms(const string &path)
+void PRadGEMSystem::SaveHistograms(const std::string &path)
 const
 {
     TFile *f = new TFile(path.c_str(), "recreate");
 
-    for(auto fec : fec_list)
+    for(auto &fec : daq_slots)
     {
-        string fec_name = "FEC " + to_string(fec->GetID());
+        if(!fec)
+            continue;
+
+        std::string fec_name = "FEC " + std::to_string(fec->GetID());
         TDirectory *cdtof = f->mkdir(fec_name.c_str());
         cdtof->cd();
 
         for(auto apv : fec->GetAPVList())
         {
-            string adc_name = "ADC " + to_string(apv->GetADCChannel());
+            std::string adc_name = "ADC " + std::to_string(apv->GetADCChannel());
             TDirectory *cur_dir = cdtof->mkdir(adc_name.c_str());
             cur_dir->cd();
 
@@ -771,18 +768,49 @@ const
 }
 
 // get the whole APV list
-vector<PRadGEMAPV *> PRadGEMSystem::GetAPVList()
+std::vector<PRadGEMAPV *> PRadGEMSystem::GetAPVList()
 const
 {
-    vector<PRadGEMAPV *> list;
-    for(auto &fec : fec_list)
+    std::vector<PRadGEMAPV*> apv_list;
+    for(auto &fec : daq_slots)
     {
-        vector<PRadGEMAPV *> sub_list = fec->GetAPVList();
-        list.insert(list.end(), sub_list.begin(), sub_list.end());
+        if(!fec)
+            continue;
+
+        std::vector<PRadGEMAPV*> sub_list = fec->GetAPVList();
+        apv_list.insert(apv_list.end(), sub_list.begin(), sub_list.end());
     }
 
-    return list;
+    return apv_list;
 }
+
+std::vector<PRadGEMFEC*> PRadGEMSystem::GetFECList()
+const
+{
+    std::vector<PRadGEMFEC*> res;
+    for(auto &fec : daq_slots)
+    {
+        if(fec)
+            res.push_back(fec);
+    }
+
+    return res;
+}
+
+std::vector<PRadGEMDetector*> PRadGEMSystem::GetDetectorList()
+const
+{
+    std::vector<PRadGEMDetector*> res;
+    for(auto &det : det_slots)
+    {
+        if(det)
+            res.push_back(det);
+    }
+
+    return res;
+
+}
+
 
 //============================================================================//
 // Private Member Functions                                                   //
@@ -790,7 +818,7 @@ const
 
 // a helper operator to make arguments reading easier
 template<typename T>
-list<ConfigValue> &operator >>(list<ConfigValue> &lhs, T &t)
+std::list<ConfigValue> &operator >>(std::list<ConfigValue> &lhs, T &t)
 {
     if(lhs.empty()) {
         t = ConfigValue("0").Convert<T>();
@@ -803,9 +831,9 @@ list<ConfigValue> &operator >>(list<ConfigValue> &lhs, T &t)
 }
 
 // build the detectors according to the arguments
-void PRadGEMSystem::buildDetector(list<ConfigValue> &det_args)
+void PRadGEMSystem::buildDetector(std::list<ConfigValue> &det_args)
 {
-    string readout, type, name;
+    std::string readout, type, name;
     det_args >> readout >> type >> name;
     PRadGEMDetector *new_det = new PRadGEMDetector(readout, type, name);
 
@@ -816,16 +844,15 @@ void PRadGEMSystem::buildDetector(list<ConfigValue> &det_args)
 
     // successfully registered, build maps
     // the map will be needed for add planes into detectors
-    det_list.push_back(new_det);
     det_name_map[name] = new_det;
 }
 
 // build the planes according to the arguments
 // since planes need to be added into existing detectors, it requires all the
 // detectors to be built first and a proper detector map is generated
-void PRadGEMSystem::buildPlane(list<ConfigValue> &pln_args)
+void PRadGEMSystem::buildPlane(std::list<ConfigValue> &pln_args)
 {
-    string det_name, plane_name;
+    std::string det_name, plane_name;
     double size;
     int type, connector, orient, direct;
 
@@ -837,10 +864,10 @@ void PRadGEMSystem::buildPlane(list<ConfigValue> &pln_args)
 
     PRadGEMDetector *det = GetDetector(det_name);
     if(det == nullptr) {// did not find detector
-        cout << "PRad GEM System Warning: Failed to add plane " << plane_name
-             << " to detector " << det_name
-             << ", please check if the detector exists in GEM configuration file."
-             << endl;
+        std::cout << "PRad GEM System Warning: Failed to add plane " << plane_name
+                  << " to detector " << det_name
+                  << ", please check if the detector exists in GEM configuration file."
+                  << std::endl;
         return;
     }
 
@@ -854,10 +881,10 @@ void PRadGEMSystem::buildPlane(list<ConfigValue> &pln_args)
 }
 
 // build the FECs according to the arguments
-void PRadGEMSystem::buildFEC(list<ConfigValue> &fec_args)
+void PRadGEMSystem::buildFEC(std::list<ConfigValue> &fec_args)
 {
     int fec_id;
-    string fec_ip;
+    std::string fec_ip;
 
     fec_args >> fec_id >> fec_ip;
 
@@ -867,16 +894,14 @@ void PRadGEMSystem::buildFEC(list<ConfigValue> &fec_args)
         delete new_fec;
         return;
     }
-
-    fec_list.push_back(new_fec);
 }
 
 // build the APVs according to the arguments
 // since APVs need to be added into existing FECs, and be connected to existing
 // planes, it requires FEC and planes to be built first and proper maps are generated
-void PRadGEMSystem::buildAPV(list<ConfigValue> &apv_args)
+void PRadGEMSystem::buildAPV(std::list<ConfigValue> &apv_args)
 {
-    string det_name, plane, status;
+    std::string det_name, plane, status;
     int fec_id, adc_ch, orient, index;
     unsigned short hl;
     apv_args >> fec_id >> adc_ch >> det_name >> plane >> orient >> index >> hl
@@ -896,10 +921,10 @@ void PRadGEMSystem::buildAPV(list<ConfigValue> &apv_args)
 
     PRadGEMFEC *fec = GetFEC(fec_id);
     if(fec == nullptr) {// did not find detector
-        cout << "PRad GEM System Warning: Failed to add APV " << adc_ch
-             << " to FEC " << fec_id
-             << ", please check if the FEC exists in GEM configuration file."
-             << endl;
+        std::cout << "PRad GEM System Warning: Failed to add APV " << adc_ch
+                  << " to FEC " << fec_id
+                  << ", please check if the FEC exists in GEM configuration file."
+                  << std::endl;
         return;
     }
 
@@ -912,20 +937,20 @@ void PRadGEMSystem::buildAPV(list<ConfigValue> &apv_args)
     // trying to connect to Plane
     PRadGEMDetector *det = GetDetector(det_name);
     if(det == nullptr) {
-        cout << "PRad GEM System Warning: Cannot find detector " << det_name
-             << ", APV " << fec_id << ", " << adc_ch
-             << " is not connected to the detector plane. "
-             << endl;
+        std::cout << "PRad GEM System Warning: Cannot find detector " << det_name
+                  << ", APV " << fec_id << ", " << adc_ch
+                  << " is not connected to the detector plane. "
+                  << std::endl;
         return;
     }
 
     PRadGEMPlane *pln = det->GetPlane(plane);
     if(pln == nullptr) {
-        cout << "PRad GEM System Warning: Cannot find plane " << plane
-             << " in detector " << det_name
-             << ", APV " << fec_id << ", " << adc_ch
-             << " is not connected to the detector plane. "
-             << endl;
+        std::cout << "PRad GEM System Warning: Cannot find plane " << plane
+                  << " in detector " << det_name
+                  << ", APV " << fec_id << ", " << adc_ch
+                  << " is not connected to the detector plane. "
+                  << std::endl;
         return;
     }
 
