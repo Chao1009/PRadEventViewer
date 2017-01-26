@@ -8,9 +8,11 @@
 
 #include "PRadHyCalSystem.h"
 #include "PRadHyCalCluster.h"
+#include "PRadInfoCenter.h"
 #include <iostream>
 #include <iomanip>
 #include <algorithm>
+#include "canalib.h"
 #include "TFile.h"
 #include "TF1.h"
 #include "TH1D.h"
@@ -46,7 +48,7 @@ PRadHyCalSystem::PRadHyCalSystem(const std::string &path)
 // it does not only copy the members, but also copy the connections between the
 // members
 PRadHyCalSystem::PRadHyCalSystem(const PRadHyCalSystem &that)
-: ConfigObject(that), hycal(nullptr)
+: ConfigObject(that), hycal(nullptr), cal_period(that.cal_period)
 {
     // copy detector
     if(that.hycal) {
@@ -88,7 +90,7 @@ PRadHyCalSystem::PRadHyCalSystem(const PRadHyCalSystem &that)
 
 // move constructor
 PRadHyCalSystem::PRadHyCalSystem(PRadHyCalSystem &&that)
-: ConfigObject(that),
+: ConfigObject(that), cal_period(std::move(that.cal_period)),
   adc_list(std::move(that.adc_list)), tdc_list(std::move(that.tdc_list)),
   adc_addr_map(std::move(that.adc_addr_map)), adc_name_map(std::move(that.adc_name_map)),
   tdc_addr_map(std::move(that.tdc_addr_map)), tdc_name_map(std::move(that.tdc_name_map)),
@@ -142,6 +144,7 @@ PRadHyCalSystem &PRadHyCalSystem::operator =(PRadHyCalSystem &&rhs)
     rhs.recon = nullptr;
     energy_hist = rhs.energy_hist;
     rhs.energy_hist = nullptr;
+    cal_period = std::move(rhs.cal_period);
 
     adc_list = std::move(rhs.adc_list);
     tdc_list = std::move(rhs.tdc_list);
@@ -167,13 +170,10 @@ void PRadHyCalSystem::Configure(const std::string &path)
 
     if(hycal) {
         hycal->ReadModuleList(GetConfig<std::string>("Module List"));
-        hycal->ReadCalibrationFile(GetConfig<std::string>("Calibration File"));
     }
 
     // channel, pedestal and gain factors
     ReadChannelList(GetConfig<std::string>("DAQ Channel List"));
-
-    ReadRunInfoFile(GetConfig<std::string>("Run Info File"));
 
     // trigger efficiency
     ReadTriggerEffFile(GetConfig<std::string>("Trigger Efficiency Map"));
@@ -191,13 +191,22 @@ void PRadHyCalSystem::Configure(const std::string &path)
     PRadClusterProfile::Instance().LoadProfile((int)PRadHyCalModule::PbGlass, lg_prof);
 
 #ifdef USE_PRIMEX_METHOD
-    // original primex method needs to load the profile into fortran coe
+    // original primex method needs to load the profile into fortran code
     PRadPrimexCluster *method = static_cast<PRadPrimexCluster*>(GetClusterMethod("Primex"));
     if(method) {
         method->LoadCrystalProfile(pwo_prof);
         method->LoadLeadGlassProfile(lg_prof);
     }
 #endif
+
+    // read calibration period
+    std::string file_path = ConfigParser::form_path(
+                            GetConfig<std::string>("Calibration Folder"),
+                            GetConfig<std::string>("Calibration Period File"));
+    ReadCalPeriodFile(file_path);
+
+    int run_number = getDefConfig<int>("Run Number", 1291, false);
+    UpdateRun(run_number, false);
 }
 
 // read DAQ channel list
@@ -439,6 +448,109 @@ void PRadHyCalSystem::ReadTriggerEffFile(const std::string &path)
 
         if(module) {
             module->SetTriggerEfficiency(eff);
+        }
+    }
+}
+
+// read file that contains the information about calibration period
+void PRadHyCalSystem::ReadCalPeriodFile(const std::string &path)
+{
+    if(path.empty())
+        return;
+
+    ConfigParser c_parser;
+    if(!c_parser.ReadFile(path)) {
+        std::cerr << "PRad HyCal System Error: Failed to read calibration period file "
+                  << "\"" << path << "\""
+                  << std::endl;
+        return;
+    }
+
+    cal_period.clear();
+
+    int period, sub_period, begin, end;
+
+    while(c_parser.ParseLine())
+    {
+        if(!c_parser.CheckElements(4))
+            continue;
+
+        c_parser >> period >> sub_period >> begin >> end;
+
+        // no need to update
+        cal_period.emplace_back(begin, end, period, sub_period);
+    }
+}
+
+// set run number from data file path and update related file
+void PRadHyCalSystem::UpdateRun(const std::string &path, bool verbose)
+{
+    if(PRadInfoCenter::SetRunNumber(path)) {
+        if(verbose) {
+            std::cout << "PRad HyCal System: Set Run Number "
+                      << PRadInfoCenter::GetRunNumber()
+                      << std::endl;
+        }
+        UpdateRun(verbose);
+    }
+}
+
+// set run number and update related file
+void PRadHyCalSystem::UpdateRun(int run, bool verbose)
+{
+    if(PRadInfoCenter::SetRunNumber(run)) {
+        if(verbose) {
+            std::cout << "PRad HyCal System: Set Run Number "
+                      << PRadInfoCenter::GetRunNumber()
+                      << std::endl;
+        }
+        UpdateRun(verbose);
+    }
+}
+
+// read run number from information center and update related file
+void PRadHyCalSystem::UpdateRun(bool verbose)
+{
+    int run = PRadInfoCenter::GetRunNumber();
+
+    // update config value first since file path will need them
+    SetConfigValue("Run Number", run);
+
+    auto it = cana::binary_search(cal_period.begin(), cal_period.end(), run);
+    if(it == cal_period.end()) {
+        std::cout << "PRad HyCal System Warning: Cannot find calibration period "
+                  << "for run " << run << ", assuming period 5-1."
+                  << std::endl;
+        SetConfigValue("Period", 5);
+        SetConfigValue("Sub-period", 1);
+    } else {
+        SetConfigValue("Period", it->main);
+        SetConfigValue("Sub-period", it->sub);
+    }
+
+    // run info file
+    std::string file_path;
+    file_path = ConfigParser::form_path(GetConfig<std::string>("Run Info Folder"),
+                                        GetConfig<std::string>("Run Info File"));
+
+    ReadRunInfoFile(file_path);
+
+    if(verbose) {
+        std::cout << "PRad HyCal System: Read Run Info File "
+                  << "\"" << file_path << "\""
+                  << std::endl;
+    }
+
+    // calibration file
+    file_path = ConfigParser::form_path(GetConfig<std::string>("Calibration Folder"),
+                                        GetConfig<std::string>("Calibration File"));
+    if(hycal) {
+        hycal->ReadCalibrationFile(file_path);
+
+        if(verbose) {
+            std::cout << "PRad HyCal System: Read Calibration File "
+                      << "\"" << file_path << "\""
+                      << std::endl;
         }
     }
 }

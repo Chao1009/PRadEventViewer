@@ -10,7 +10,7 @@
 
 #include "PRadInfoCenter.h"
 #include "ConfigParser.h"
-
+#include <iostream>
 
 // add the trigger channels
 PRadInfoCenter::PRadInfoCenter()
@@ -83,9 +83,14 @@ void PRadInfoCenter::UpdateInfo(const EventData &event)
 }
 
 // set run number
-void PRadInfoCenter::SetRunNumber(int run)
+bool PRadInfoCenter::SetRunNumber(int run)
 {
-    Instance().run_info.run_number = run;
+    if(Instance().run_info.run_number != run) {
+        Instance().run_info.run_number = run;
+        return true;
+    }
+
+    return false;
 }
 
 // get run number
@@ -116,10 +121,14 @@ double PRadInfoCenter::GetLiveTime()
 };
 
 // set run number from file path
-void PRadInfoCenter::SetRunNumber(const std::string &path)
+bool PRadInfoCenter::SetRunNumber(const std::string &path)
 {
     std::string file_name = ConfigParser::decompose_path(path).name;
     int run = ConfigParser::find_integer(file_name);
-    if(run > 0)
+    if(run > 0 && Instance().run_info.run_number != run) {
         Instance().run_info.run_number = run;
+        return true;
+    }
+
+    return false;
 }

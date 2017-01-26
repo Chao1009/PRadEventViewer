@@ -124,6 +124,10 @@ namespace cana
         return mid;
     }
 
+    // Comp(*it, val) output should be defined as
+    // =0 : ==
+    // >0 : >
+    // <0 : <
     template<class RdmaccIt, typename T, class Comp>
     RdmaccIt binary_search(RdmaccIt beg, RdmaccIt end, const T &val, Comp comp)
     {

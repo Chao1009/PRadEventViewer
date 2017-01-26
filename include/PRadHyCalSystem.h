@@ -11,6 +11,7 @@
 #include "PRadClusterProfile.h"
 #include "PRadTDCChannel.h"
 #include "PRadADCChannel.h"
+#include "PRadCalibConst.h"
 #include "ConfigObject.h"
 
 #ifdef USE_PRIMEX_METHOD
@@ -39,6 +40,46 @@ namespace std
     };
 }
 
+// data structure for finding the calibration period
+struct CalPeriod
+{
+    int begin;
+    int end;
+    int main;
+    int sub;
+
+    CalPeriod()
+    : begin(0), end(0), main(0), sub(0)
+    {};
+    CalPeriod(int b, int e, int m, int s)
+    : begin(b), end(e), main(m), sub(s)
+    {};
+
+    bool operator ==(const int &run)
+    const
+    {
+        return (run >= begin) && (run <= end);
+    }
+
+    bool operator !=(const int &run)
+    const
+    {
+        return (run < begin) || (run > end);
+    }
+
+    bool operator <(const int &run)
+    const
+    {
+        return end < run;
+    }
+
+    bool operator >(const int &run)
+    const
+    {
+        return begin > run;
+    }
+};
+
 class TH1D;
 
 class PRadHyCalSystem : public ConfigObject
@@ -63,6 +104,10 @@ public:
     void ReadChannelList(const std::string &path);
     void ReadRunInfoFile(const std::string &path);
     void ReadTriggerEffFile(const std::string &path);
+    void ReadCalPeriodFile(const std::string &path);
+    void UpdateRun(const std::string &path, bool verbose = true);
+    void UpdateRun(int run, bool verbose = true);
+    void UpdateRun(bool verbose = true);
 
     // connections
     void BuildConnections();
@@ -125,11 +170,12 @@ public:
     void FitPedestal();
     void CorrectGainFactor(int ref);
 
-
 private:
     PRadHyCalDetector *hycal;
     PRadHyCalCluster *recon;
     TH1D *energy_hist;
+
+    std::vector<CalPeriod> cal_period;
 
     // channel lists
     std::vector<PRadADCChannel*> adc_list;

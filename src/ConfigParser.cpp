@@ -536,7 +536,7 @@ bool ConfigParser::strcmp_case_insensitive(const string &str1, const string &str
 
 // find the first pair position in a string, it will return the most inner pair
 // if the first pair is a mult-layer structure
-bool ConfigParser::find_pair(const std::string &str,
+bool ConfigParser::find_pair(const string &str,
                              const string &open, const string &close,
                              int &open_pos, int &close_pos)
 {
@@ -653,4 +653,16 @@ ConfigParser::PathInfo ConfigParser::decompose_path(const string &path)
     }
 
     return res;
+}
+
+string ConfigParser::form_path(const string &dir, const string &file)
+{
+    string file_path;
+    file_path.reserve(dir.size() + file.size() + 1);
+
+    file_path = dir;
+    if(file_path.size() && file_path.back() != '/') file_path += "/";
+    file_path += file;
+
+    return file_path;
 }

@@ -18,8 +18,8 @@ public:
     PRadInfoCenter(const PRadInfoCenter &)  = delete;
     void operator=(const PRadInfoCenter &)  = delete;
 
-    static void SetRunNumber(int run);
-    static void SetRunNumber(const std::string &path);
+    static bool SetRunNumber(int run);
+    static bool SetRunNumber(const std::string &path);
     static int GetRunNumber();
     static double GetBeamCharge();
     static double GetLiveBeamCharge();

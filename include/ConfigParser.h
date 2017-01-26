@@ -149,6 +149,7 @@ public:
     static void find_integer_helper(const std::string &str, std::vector<int> &result);
     struct PathInfo { std::string dir, name, suffix; };
     static PathInfo decompose_path(const std::string &path);
+    static std::string form_path(const std::string &dir, const std::string &file);
 };
 
 #endif

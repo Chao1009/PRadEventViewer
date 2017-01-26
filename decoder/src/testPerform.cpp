@@ -9,6 +9,7 @@
 #include "PRadDataHandler.h"
 #include "PRadDSTParser.h"
 #include "PRadBenchMark.h"
+#include "PRadInfoCenter.h"
 #include <iostream>
 #include <iomanip>
 #include <string>
@@ -43,6 +44,7 @@ void testHyCalCluster(const string &file, PRadHyCalSystem *sys)
 {
     PRadDSTParser *dst_parser = new PRadDSTParser();
 
+    sys->UpdateRun(file);
     cout << "Test HyCal Clustering Performance for file " << file << endl;
     cout << "Using method " << sys->GetClusterMethodName() << endl;
 
