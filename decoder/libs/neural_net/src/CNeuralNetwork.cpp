@@ -208,25 +208,79 @@ void CNeuralNetwork::Update(const std::vector<double> &input)
     {
         layers[i].Update();
     }
-}
 
-std::vector<double> CNeuralNetwork::GetOutput()
-const
-{
-    std::vector<double> res;
-    if(layers.empty())
-        return res;
-
+    // save output
     auto &outn = layers.back().GetNeurons();
-    res.reserve(outn.size());
+    output.clear();
     for(auto &neuron : outn)
-        res.push_back(neuron.signal);
-
-    return res;
+        output.push_back(neuron.signal);
 }
 
-void CNeuralNetwork::Train(const std::vector<double> &input,
-                           const std::vector<double> &expect)
+// Training with erro back propagation
+void CNeuralNetwork::BP_Train(const std::vector<double> &input,
+                              const std::vector<double> &expect)
 {
-    // place holder
+    // sanity check
+    if(layers.empty())
+        return;
+
+    Update(input);
+    std::vector<double> output = GetOutput();
+
+    if(output.size() != expect.size())
+    {
+        std::cerr << "Unmatched dimension between expectation values ("
+                  << expect.size() << ") and output values ("
+                  << output.size() << "), abort back propagation training."
+                  << std::endl;
+        return;
+    }
+
+    // start from output layer
+    auto &out_neurons = layers.back().GetNeurons();
+
+    for(unsigned int i = 0; i < out_neurons.size(); ++i)
+    {
+        double dE = output.at(i) - expect.at(i);
+        // set error
+        out_neurons.at(i).BP_Init(dE);
+    }
+
+    // initialize the respons for other layers
+    for(unsigned int i = 0; i < layers.size() - 1;  ++i)
+    {
+        auto &layer = layers.at(i);
+
+        for(auto &neuron : layer.GetNeurons())
+        {
+            neuron.BP_Init(0.);
+        }
+    }
+
+    // propagate responses backwardly
+    for(auto it = layers.rbegin(); it != layers.rend(); ++it)
+    {
+        for(auto &neuron : it->GetNeurons())
+        {
+            neuron.BP_Propagate();
+        }
+    }
+
+    // update weights for all the neurons
+    // input layer is specially treated
+    auto &in_neurons = layers.front().GetNeurons();
+    for(auto &neuron : in_neurons)
+    {
+        neuron.BP_Learn(input, learn_factor);
+    }
+
+    for(unsigned int i = 1; i < layers.size(); ++i)
+    {
+        auto &layer = layers.at(i);
+
+        for(auto &neuron : layer.GetNeurons())
+        {
+            neuron.BP_Learn(learn_factor);
+        }
+    }
 }

@@ -35,6 +35,12 @@ public:
     std::vector<double> GetWeights() const;
     unsigned int GetWeightSize() const {return connections.size() + 1;};
 
+    // Back Propagation Trainning functions
+    void BP_Init(const double &dE);
+    void BP_Propagate();
+    void BP_Learn(const double &factor);
+    void BP_Learn(const std::vector<double> &input, const double &factor);
+
 private:
     double sigmoid(const double &a, const double &p) const;
     double dsigmoid(const double &a, const double &p) const;
@@ -43,6 +49,7 @@ private:
     std::vector<Connection>	connections;
     double bias;
     double signal;
+    double sigma;
 };
 
 #endif

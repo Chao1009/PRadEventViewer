@@ -19,11 +19,14 @@ public:
     void Train(const std::vector<double> &input, const std::vector<double> &expect);
 
     void SaveNet(const char *path) const;
-    std::vector<double> GetOutput() const;
+    const std::vector<double> &GetOutput() const {return output;};
     double GetLearnFactor() const {return learn_factor;};
+
+    void BP_Train(const std::vector<double> &in, const std::vector<double> &req);
 
 private:
     std::vector<CNeuronLayer> layers;
+    std::vector<double> output;
     double learn_factor;
 };
 
