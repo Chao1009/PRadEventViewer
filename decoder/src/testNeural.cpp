@@ -8,7 +8,7 @@
 #include "CNeuralNetwork.h"
 #include <iostream>
 
-//#define NEW_NET
+#define NEW_NET
 
 using namespace std;
 
@@ -41,10 +41,11 @@ int main(int /*argc*/, char * /*argv*/ [])
          << my_net.GetOutput().at(2)
          << endl;
 
-    // train it 1000 times
-    for(int count = 0; count < 1000; ++count)
+    // train it 2000 times
+    int count = 2000;
+    while(count-- > 0)
     {
-        my_net.BP_Train({0.1, 0.2, 0.3, 0.4, 0.5}, {0.3, 0.6, 0.9});
+        my_net.BP_Train(input, expect);
     }
 
     // output after training
