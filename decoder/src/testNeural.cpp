@@ -26,7 +26,7 @@ int main(int /*argc*/, char * /*argv*/ [])
     my_net.InitializeWeights();
 #else
     // or create net from saved network data
-    my_net.CreateNet("save_net.dat");
+    my_net.CreateNet("saved.net");
 #endif
 
     // set input and expected output
@@ -48,7 +48,7 @@ int main(int /*argc*/, char * /*argv*/ [])
          << my_net.GetOutput().at(2)
          << endl;
 
-    // train it 2000 times
+    // train it 20000 times
     int count = 20000;
     while(count-- > 0)
     {
@@ -69,6 +69,6 @@ int main(int /*argc*/, char * /*argv*/ [])
          << my_net.GetOutput().at(2)
          << endl;
     // save the result
-    my_net.SaveNet("save_net.dat");
+    my_net.SaveNet("saved.net");
     return 0;
 }

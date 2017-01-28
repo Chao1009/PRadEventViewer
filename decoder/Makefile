@@ -62,8 +62,10 @@ EXAMPLE       = testGEM \
                 beamChargeCount \
 				cosmicCheck \
 				mollerCenter \
+				physCalib \
 				testNeural \
-				physCalib
+				neuralTrain \
+				neuralReject
 
 EXAMPLE_BINS  = $(addprefix $(EXAMPLE_DIR)/, $(EXAMPLE))
 
