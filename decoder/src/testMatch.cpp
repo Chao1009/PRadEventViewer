@@ -64,6 +64,7 @@ void testMatch(const string &path)
 
     PRadDSTParser *dst_parser = new PRadDSTParser();
     dst_parser->OpenInput(path);
+    dst_parser->OpenOutput(ConfigParser::decompose_path(path).name + "_match.dst");
 
     string outfile = ConfigParser::decompose_path(path).name + "_match.root";
     TFile f(outfile.c_str(), "RECREATE");
@@ -149,13 +150,18 @@ void testMatch(const string &path)
                 histev->Fill(angle, hit.E);
             }
 
+            if(matched.size() >= 1 && matched.size() <= 2)
+                dst_parser->WriteEvent(event);
+
         } else if(dst_parser->EventType() == PRadDSTParser::Type::epics) {
             // save epics into handler, otherwise get epicsvalue won't work
             epics->AddEvent(dst_parser->GetEPICSEvent());
+            dst_parser->WriteEPICS();
         }
     }
 
     dst_parser->CloseInput();
+    dst_parser->CloseOutput();
 
     cout <<"------[ ev " << count << " ]---"
          << "---[ " << timer.GetElapsedTimeStr() << " ]---"
