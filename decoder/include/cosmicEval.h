@@ -1,6 +1,8 @@
 #include "PRadHyCalSystem.h"
 #include <vector>
 
+#define DEFAULT_ENERGY_THRES 1.0
+
 std::vector<PRadHyCalModule*> __modules;
 std::vector<std::vector<PRadHyCalModule*>> __groups;
 
@@ -54,7 +56,7 @@ unsigned int GroupHits(std::vector<PRadHyCalModule*> &hits, std::vector<std::vec
 LineParam LinearRegression(const std::vector<PRadHyCalModule*> &group);
 EnergyParam EvalEnergy(const std::vector<PRadHyCalModule*> &group);
 
-EventParam AnalyzeEvent(PRadHyCalSystem *sys, const EventData &event, double thres = 3.0)
+EventParam AnalyzeEvent(PRadHyCalSystem *sys, const EventData &event, double thres = DEFAULT_ENERGY_THRES)
 {
     EventParam res;
     sys->ChooseEvent(event);

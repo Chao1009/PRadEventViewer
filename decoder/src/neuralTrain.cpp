@@ -18,6 +18,8 @@
 #include <vector>
 
 #define PROGRESS_COUNT 1000
+#define NN_INPUT 6
+#define NN_OUTPUT 1
 
 using namespace std;
 
@@ -156,8 +158,8 @@ int main(int argc, char *argv[])
     if(net_path.empty())
     {
         // create net with dimensions
-        // inputs and outputs are hard coded to be 6 and 1
-        my_net.CreateNet(6, 1, hidden);
+        // inputs and outputs are hard coded
+        my_net.CreateNet(NN_INPUT, NN_OUTPUT, hidden);
         // initialize the weights with random values
         my_net.InitializeWeights();
     }
@@ -188,7 +190,9 @@ void NeuralTrain(CNeuralNetwork &net,
 {
 
     vector<vector<double>> cosmic_params;
+    vector<double> cosmic_expect(NN_OUTPUT, 1.0);
     vector<vector<double>> good_params;
+    vector<double> good_expect(NN_OUTPUT, 0.0);
 
     // read events and fill in the params array
     FillParams(sys, path, cosmic_params, cap);
@@ -217,10 +221,10 @@ void NeuralTrain(CNeuralNetwork &net,
         }
         // randomly pick param sets
         auto &cosmic_input = cosmic_params.at(cosmic_dist(rng));
-        net.BP_Train(cosmic_input, {1.0});
+        net.BP_Train(cosmic_input, cosmic_expect);
 
         auto &good_input = good_params.at(good_dist(rng));
-        net.BP_Train(good_input, {0.0});
+        net.BP_Train(good_input, good_expect);
     }
 
     cout << "----------training " << count - 1
@@ -282,7 +286,7 @@ void FillParams(PRadHyCalSystem &sys,
                      << "\r" << flush;
             }
 
-            auto param = AnalyzeEvent(&sys, event, 3.0);
+            auto param = AnalyzeEvent(&sys, event);
             if(param.group_size == 0)
                 continue;
 

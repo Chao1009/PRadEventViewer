@@ -53,11 +53,13 @@ void NeuralReject(CNeuralNetwork &net, PRadHyCalSystem &sys, string path)
     string fname = ConfigParser::decompose_path(path).name;
 
     TFile f((fname + "_prob.root").c_str(), "RECREATE");
-    TH1F hist("Cosmic Probability", "Cosmic Probability", 100, 0., 1.0);
+    TH1F hist("Cosmic Probability", "Cosmic Probability", 1000, 0., 1.0);
 
     PRadDSTParser dst_parser;
     dst_parser.OpenInput(path);
     dst_parser.OpenOutput(fname + "_nrej.dst");
+    PRadDSTParser dst_parser2;
+    dst_parser2.OpenOutput(fname + "_nsav.dst");
 
     int count = 0, reject = 0;
     PRadBenchMark timer;
@@ -85,6 +87,10 @@ void NeuralReject(CNeuralNetwork &net, PRadHyCalSystem &sys, string path)
             {
                 dst_parser.WriteEvent(event);
                 reject++;
+            }
+            else
+            {
+                dst_parser2.WriteEvent(event);
             }
         }
     }
