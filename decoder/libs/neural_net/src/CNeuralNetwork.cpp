@@ -7,6 +7,7 @@
 
 #include "CNeuralNetwork.h"
 #include <iostream>
+#include <iomanip>
 #include <fstream>
 #include <random>
 
@@ -17,6 +18,27 @@ CNeuralNetwork::CNeuralNetwork(double factor)
 : learn_factor(factor)
 {
     // place holder
+}
+
+// print out the structure
+inline void __cnn_print_structure(const std::vector<CNeuronLayer> &layers)
+{
+    std::cout << "Neural Network Structure: ";
+    if(layers.empty()) {
+        std::cout << "EMPTY!" << std::endl;
+    } else {
+        std::cout << std::setw(6) << " " << "Input dimension: " << layers.front().GetInputSize()
+                  << std::endl;
+                  << std::setw(6) << " " << "Output dimension: " << layers.back().size()
+                  << std::endl;
+                  << std::setw(6) << " " << "Hidden layers: " << layers.front().size();
+        for(unsigned int i = 1; i < layers.size() - 1; ++i)
+        {
+            std::cout << ", " << layers.at(i).size();
+        }
+        std::cout << std::endl;
+    }
+
 }
 
 // create a network
@@ -48,6 +70,8 @@ unsigned int CNeuralNetwork::CreateNet(unsigned int input_size,
     {
         layers.at(i).Connect(layers.at(i-1));
     }
+
+    __cnn_print_structure(layers);
 
     return layers.size();
 }
@@ -118,6 +142,8 @@ unsigned int CNeuralNetwork::CreateNet(const char *path)
         layers.at(i).Connect(layers.at(i-1));
     }
 
+    __cnn_print_structure(layers);
+
     return layers.size();
 }
 
@@ -126,7 +152,7 @@ void CNeuralNetwork::InitializeWeights()
 {
     std::mt19937 rng;
     rng.seed(std::random_device()());
-    std::uniform_real_distribution<double> uni_dist(0., 1.);
+    std::uniform_real_distribution<double> uni_dist(-1., 1.);
 
     for(auto &layer : layers)
     {

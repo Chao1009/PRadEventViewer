@@ -19,7 +19,7 @@ int main(int /*argc*/, char * /*argv*/ [])
 #ifdef NEW_NET
     // create net with dimensions
     // 2 hidden layers have 5 and 3 neurons respectively
-    std::vector<unsigned int> hidden = {5, 3};
+    std::vector<unsigned int> hidden = {15, 5, 3};
     // 5 inputs and 3 outputs with hidden layers
     my_net.CreateNet(5, 3, hidden);
     // initialize the weights with random values

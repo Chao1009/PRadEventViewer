@@ -6,6 +6,7 @@
 //============================================================================//
 
 #include "CNeuralNetwork.h"
+#include "cosmicEval.h"
 #include "PRadHyCalSystem.h"
 #include "PRadDataHandler.h"
 #include "PRadDSTParser.h"
@@ -18,8 +19,7 @@
 
 using namespace std;
 
-void NeuralTrain(CNeuralNetwork &net, PRadHyCalSystem &sys, string path, string path2);
-void FillInput(PRadHyCalSystem &sys, vector<double> &input, const EventData &event);
+void NeuralTrain(CNeuralNetwork &net, PRadHyCalSystem &sys, string path, bool cosmic);
 vector<PRadHyCalModule*> modules;
 
 void Helper()
@@ -35,10 +35,10 @@ void Helper()
          << "set the path to save the trained network, save to \"saved.net\" by default "
          << endl
          << setw(10) << "-f " << "<value>: "
-         << "define learning factor, 0.01 is the default value."
+         << "define learning factor, 0.1 is the default value."
          << endl
          << setw(10) << "-i " << "<value>: "
-         << "set the iteration of training process, 2 is the default value."
+         << "set the iteration of training process, 100 is the default value."
          << endl
          << setw(10) << "-h " << ": "
          << "see this helper information."
@@ -48,8 +48,8 @@ void Helper()
 int main(int argc, char *argv[])
 {
     string net_path, save_path, argstr[2];
-    double learn_factor = 0.01;
-    int learn_iter = 2, run_arg = 0;
+    double learn_factor = 0.1;
+    int learn_iter = 100, run_arg = 0;
 
     save_path = "saved.net";
 
@@ -97,76 +97,74 @@ int main(int argc, char *argv[])
 
     if(net_path.empty())
     {
+        cout << "Create a new Network." << endl;
         // create net with dimensions
         // 2 hidden layers have 5 and 3 neurons respectively
-        std::vector<unsigned int> hidden = {500, 35, 5};
+        std::vector<unsigned int> hidden = {15, 5, 3};
         // 5 inputs and 3 outputs with hidden layers
-        my_net.CreateNet(1728, 1, hidden);
+        my_net.CreateNet(6, 1, hidden);
         // initialize the weights with random values
         my_net.InitializeWeights();
     }
     else {
         // or create net from saved network data
         // exit if fail to create
-        if(my_net.CreateNet(net_path.c_str()) == 0)
+        cout << "Create Network from file "
+             << "\"" << net_path << "\""
+             << endl;
+
+        if(my_net.CreateNet(net_path.c_str()) == 0) {
+            cout << "Failed to create the network." << endl;
             return -1;
+        }
     }
 
     PRadHyCalSystem sys;
     sys.Configure("config/hycal.conf");
 
-    // organize the modules geometrically
-    modules = sys.GetDetector()->GetModuleList();
-
-    sort(modules.begin(), modules.end(),
-         [] (PRadHyCalModule *m1, PRadHyCalModule *m2)
-         {
-            if(m1->GetY() == m2->GetY())
-                return m1->GetX() < m2->GetX();
-            else
-                return m1->GetY() < m2->GetY();
-         });
-
-    while(learn_iter--)
+    for(int i = 1; i <= learn_iter; ++i)
     {
-        NeuralTrain(my_net, sys, cosmic_file, data_file);
+        cout << "Training iteration " << i << "." << endl;
+        NeuralTrain(my_net, sys, cosmic_file, true);
+        NeuralTrain(my_net, sys, data_file, false);
     }
 
     my_net.SaveNet(save_path.c_str());
     return 0;
 }
 
-void NeuralTrain(CNeuralNetwork &net, PRadHyCalSystem &sys, string path, string path2)
+void NeuralTrain(CNeuralNetwork &net, PRadHyCalSystem &sys, string path, bool cosmic)
 {
-    cout << "Start to train the network with files "
-         << "\"" << path << "\" (cosmic) and "
-         << "\"" << path2 << "\" (good events). "
-         << endl;
+    vector<double> expect;
 
-    vector<double> input;
-    input.reserve(modules.size());
+    cout << "Start to train the network with file "
+         << "\"" << path << "\" ";
+    if(cosmic)
+    {
+        cout << "(cosmic)." << endl;
+        expect.push_back(1.);
+    }
+    else
+    {
+        cout << "(good events)." << endl;
+        expect.push_back(0.);
+    }
 
-    PRadDSTParser dst1, dst2;
-    dst1.OpenInput(path);
-    dst2.OpenInput(path2);
+    PRadDSTParser dst;
+    dst.OpenInput(path);
 
     int count = 0;
-    double average = 0., average2 = 0.;
+    double average = 0.;
     PRadBenchMark timer;
-    while(dst1.Read() && dst2.Read())
+    while(dst.Read())
     {
-        if((dst1.EventType() == PRadDSTParser::Type::event) &&
-           (dst2.EventType() == PRadDSTParser::Type::event))
+        if(dst.EventType() == PRadDSTParser::Type::event)
         {
 
-            auto &cosmic = dst1.GetEvent();
-            auto &product = dst2.GetEvent();
+            auto &event = dst.GetEvent();
 
-            if(!cosmic.is_physics_event() ||
-               !product.is_physics_event())
-            {
+            if(!event.is_physics_event())
                 continue;
-            }
 
             if((++count)%PROGRESS_COUNT == 0) {
                 cout << "----------event " << count
@@ -174,13 +172,13 @@ void NeuralTrain(CNeuralNetwork &net, PRadHyCalSystem &sys, string path, string 
                      << "\r" << flush;
             }
 
-            FillInput(sys, input, cosmic);
-            net.BP_Train(input, {1.});
-            average += net.GetOutput().at(0);
+            auto param = AnalyzeEvent(&sys, event, 3.0);
+            if(param.group_size == 0)
+                continue;
 
-            FillInput(sys, input, product);
-            net.BP_Train(input, {0.});
-            average2 += net.GetOutput().at(0);
+            net.BP_Train(param.GetParamList(), expect);
+
+            average += net.GetOutput().at(0);
         }
     }
 
@@ -188,17 +186,5 @@ void NeuralTrain(CNeuralNetwork &net, PRadHyCalSystem &sys, string path, string 
          << "-------[ " << timer.GetElapsedTimeStr() << " ]------"
          << endl;
     cout << "Finished training from file " << path << endl;
-    cout << "Averaged output for cosmic is " << average/(double)count << endl;
-    cout << "Averaged output for production is " << average2/(double)count << endl;
-}
-
-void FillInput(PRadHyCalSystem &sys, vector<double> &input, const EventData &event)
-{
-    sys.ChooseEvent(event);
-
-    input.clear();
-    for(auto &module : modules)
-    {
-        input.push_back(module->GetEnergy());
-    }
+    cout << "Average output is " << average/(double)count << endl;
 }

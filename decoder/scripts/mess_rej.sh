@@ -3,7 +3,7 @@
 # auto search the replayed dst files and reject cosmic backgrounds by using a specified program
 
 # define program position
-prog="/work/hallb/prad/PRadEventViewer/decoder/cosmicCheck"
+prog="/work/hallb/prad/PRadEventViewer/decoder/messReject"
 # define replay files directory
 dir="/lustre/expphy/work/hallb/prad/replay/event_sel/"
 # define event file format

@@ -7,6 +7,7 @@
 //============================================================================//
 
 #include "CNeuralNetwork.h"
+#include "cosmicEval.h"
 #include "PRadHyCalSystem.h"
 #include "PRadDataHandler.h"
 #include "PRadDSTParser.h"
@@ -54,20 +55,6 @@ void NeuralReject(CNeuralNetwork &net, PRadHyCalSystem &sys, string path)
     TFile f((fname + "_prob.root").c_str(), "RECREATE");
     TH1F hist("Cosmic Probability", "Cosmic Probability", 100, 0., 1.0);
 
-    vector<PRadHyCalModule*> modules = sys.GetDetector()->GetModuleList();
-
-    sort(modules.begin(), modules.end(),
-         [] (PRadHyCalModule *m1, PRadHyCalModule *m2)
-         {
-            if(m1->GetY() == m2->GetY())
-                return m1->GetX() < m2->GetX();
-            else
-                return m1->GetY() < m2->GetY();
-         });
-
-    vector<double> input;
-    input.reserve(modules.size());
-
     PRadDSTParser dst_parser;
     dst_parser.OpenInput(path);
 
@@ -89,13 +76,8 @@ void NeuralReject(CNeuralNetwork &net, PRadHyCalSystem &sys, string path)
             }
 
             // choose this event, get energies for all modules
-            sys.ChooseEvent(event);
-            input.clear();
-            for(auto &module : modules)
-            {
-                input.push_back(module->GetEnergy());
-            }
-            net.Update(input);
+            auto param = AnalyzeEvent(&sys, event);
+            net.Update(param.GetParamList());
             hist.Fill(net.GetOutput().at(0));
             if(net.GetOutput().at(0) > 0.9)
                 reject++;

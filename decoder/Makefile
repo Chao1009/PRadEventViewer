@@ -60,7 +60,7 @@ EXAMPLE       = testGEM \
                 replay \
                 eventSelect \
                 beamChargeCount \
-				cosmicCheck \
+				messReject \
 				mollerCenter \
 				physCalib \
 				testNeural \
