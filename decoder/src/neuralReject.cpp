@@ -57,12 +57,14 @@ void NeuralReject(CNeuralNetwork &net, PRadHyCalSystem &sys, string path)
 
     PRadDSTParser dst_parser;
     dst_parser.OpenInput(path);
+    dst_parser.OpenOutput(fname + "_nrej.dst");
 
     int count = 0, reject = 0;
     PRadBenchMark timer;
     while(dst_parser.Read())
     {
-        if(dst_parser.EventType() == PRadDSTParser::Type::event) {
+        if(dst_parser.EventType() == PRadDSTParser::Type::event)
+        {
 
             auto &event = dst_parser.GetEvent();
 
@@ -79,8 +81,11 @@ void NeuralReject(CNeuralNetwork &net, PRadHyCalSystem &sys, string path)
             auto param = AnalyzeEvent(&sys, event);
             net.Update(param.GetParamList());
             hist.Fill(net.GetOutput().at(0));
-            if(net.GetOutput().at(0) > 0.9)
+            if(net.GetOutput().at(0) > 0.5)
+            {
+                dst_parser.WriteEvent(event);
                 reject++;
+            }
         }
     }
 

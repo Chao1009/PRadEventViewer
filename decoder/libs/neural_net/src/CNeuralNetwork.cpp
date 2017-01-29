@@ -23,18 +23,19 @@ CNeuralNetwork::CNeuralNetwork(double factor)
 // print out the structure
 inline void __cnn_print_structure(const std::vector<CNeuronLayer> &layers)
 {
-    std::cout << "Neural Network Structure: ";
+    std::cout << "Neural network structure: " << std::endl;
     if(layers.empty()) {
         std::cout << "EMPTY!" << std::endl;
     } else {
-        std::cout << std::setw(6) << " " << "Input dimension: " << layers.front().GetInputSize()
-                  << std::endl;
-                  << std::setw(6) << " " << "Output dimension: " << layers.back().size()
-                  << std::endl;
-                  << std::setw(6) << " " << "Hidden layers: " << layers.front().size();
+        std::cout << std::setw(6) << " " << "Input dimension: "
+                  << layers.front().GetInputSize() << std::endl
+                  << std::setw(6) << " " << "Output dimension: "
+                  << layers.back().GetNeurons().size() << std::endl
+                  << std::setw(6) << " " << "Hidden layers: "
+                  << layers.front().GetNeurons().size();
         for(unsigned int i = 1; i < layers.size() - 1; ++i)
         {
-            std::cout << ", " << layers.at(i).size();
+            std::cout << ", " << layers.at(i).GetNeurons().size();
         }
         std::cout << std::endl;
     }
@@ -71,6 +72,7 @@ unsigned int CNeuralNetwork::CreateNet(unsigned int input_size,
         layers.at(i).Connect(layers.at(i-1));
     }
 
+    std::cout << "Create a new neural network" << std::endl;
     __cnn_print_structure(layers);
 
     return layers.size();
@@ -141,6 +143,10 @@ unsigned int CNeuralNetwork::CreateNet(const char *path)
     {
         layers.at(i).Connect(layers.at(i-1));
     }
+
+    std::cout << "Create neural network from file "
+              << "\"" << path << "\""
+              << std::endl;
 
     __cnn_print_structure(layers);
 
@@ -221,6 +227,10 @@ const
             }
         }
     }
+
+    std::cout << "Neural network data saved to "
+              << "\"" << path << "\""
+              << std::endl;
 }
 
 // give the network an input array and get the output array

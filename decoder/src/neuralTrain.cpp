@@ -97,10 +97,9 @@ int main(int argc, char *argv[])
 
     if(net_path.empty())
     {
-        cout << "Create a new Network." << endl;
         // create net with dimensions
         // 2 hidden layers have 5 and 3 neurons respectively
-        std::vector<unsigned int> hidden = {15, 5, 3};
+        std::vector<unsigned int> hidden = {20, 10, 5, 3};
         // 5 inputs and 3 outputs with hidden layers
         my_net.CreateNet(6, 1, hidden);
         // initialize the weights with random values
@@ -109,10 +108,6 @@ int main(int argc, char *argv[])
     else {
         // or create net from saved network data
         // exit if fail to create
-        cout << "Create Network from file "
-             << "\"" << net_path << "\""
-             << endl;
-
         if(my_net.CreateNet(net_path.c_str()) == 0) {
             cout << "Failed to create the network." << endl;
             return -1;
@@ -142,12 +137,12 @@ void NeuralTrain(CNeuralNetwork &net, PRadHyCalSystem &sys, string path, bool co
     if(cosmic)
     {
         cout << "(cosmic)." << endl;
-        expect.push_back(1.);
+        expect.push_back(0.8);
     }
     else
     {
         cout << "(good events)." << endl;
-        expect.push_back(0.);
+        expect.push_back(0.2);
     }
 
     PRadDSTParser dst;
