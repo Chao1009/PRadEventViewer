@@ -157,6 +157,9 @@ PRadGEMAPV::~PRadGEMAPV()
 // copy assignment operator
 PRadGEMAPV &PRadGEMAPV::operator= (const PRadGEMAPV &rhs)
 {
+    if(this == &rhs)
+        return *this;
+
     PRadGEMAPV apv(rhs); // use copy constructor
     *this = std::move(apv); // use move assignment operator
     return *this;
@@ -165,6 +168,9 @@ PRadGEMAPV &PRadGEMAPV::operator= (const PRadGEMAPV &rhs)
 // move assignment operator
 PRadGEMAPV &PRadGEMAPV::operator= (PRadGEMAPV &&rhs)
 {
+    if(this == &rhs)
+        return *this;
+
     // release memory
     ReleasePedHist();
     delete[] raw_data;

@@ -72,6 +72,9 @@ PRadHyCalDetector::~PRadHyCalDetector()
 // copy assignment operator
 PRadHyCalDetector &PRadHyCalDetector::operator =(const PRadHyCalDetector &rhs)
 {
+    if(this == &rhs)
+        return *this;
+
     PRadHyCalDetector that(rhs); // use copy constructor
     *this = std::move(that);     // use move assignment
     return *this;
@@ -80,6 +83,9 @@ PRadHyCalDetector &PRadHyCalDetector::operator =(const PRadHyCalDetector &rhs)
 // move assignment operator
 PRadHyCalDetector &PRadHyCalDetector::operator =(PRadHyCalDetector &&rhs)
 {
+    if(this == &rhs)
+        return *this;
+
     PRadDetector::operator =(rhs);
     module_list = std::move(rhs.module_list);
     id_map = std::move(rhs.id_map);

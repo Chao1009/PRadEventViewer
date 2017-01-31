@@ -22,7 +22,8 @@ public:
                       std::vector<StripCluster> &clusters) const;
     void CartesianReconstruct(const std::vector<StripCluster> &x_cluster,
                               const std::vector<StripCluster> &y_cluster,
-                              std::vector<GEMHit> &container) const;
+                              std::vector<GEMHit> &container,
+                              int det_id) const;
 
 protected:
     void groupHits(std::vector<StripHit> &h, std::vector<StripCluster> &c) const;

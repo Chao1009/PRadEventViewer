@@ -118,6 +118,9 @@ PRadGEMSystem::~PRadGEMSystem()
 // copy assignment operator
 PRadGEMSystem &PRadGEMSystem::operator =(const PRadGEMSystem &rhs)
 {
+    if(this == &rhs)
+        return *this;
+
     PRadGEMSystem that(rhs); // use copy constructor
     *this = std::move(that); // use move assignment operator
     return *this;
@@ -126,6 +129,9 @@ PRadGEMSystem &PRadGEMSystem::operator =(const PRadGEMSystem &rhs)
 // move assignment operator
 PRadGEMSystem &PRadGEMSystem::operator =(PRadGEMSystem &&rhs)
 {
+    if(this == &rhs)
+        return *this;
+
     ConfigObject::operator =(rhs);
 
     // release current resources

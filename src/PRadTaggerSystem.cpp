@@ -47,6 +47,9 @@ PRadTaggerSystem::~PRadTaggerSystem()
 // copy/move assignment operators
 PRadTaggerSystem &PRadTaggerSystem::operator =(const PRadTaggerSystem &rhs)
 {
+    if(this == &rhs)
+        return *this;
+
     PRadTaggerSystem that(rhs);
     *this = std::move(that);
     return *this;
@@ -54,6 +57,9 @@ PRadTaggerSystem &PRadTaggerSystem::operator =(const PRadTaggerSystem &rhs)
 
 PRadTaggerSystem &PRadTaggerSystem::operator =(PRadTaggerSystem &&rhs)
 {
+    if(this == &rhs)
+        return *this;
+
     delete hist_E;
     delete hist_T;
 

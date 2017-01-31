@@ -68,6 +68,9 @@ PRadDataHandler::~PRadDataHandler()
 // copy/move assignment operators
 PRadDataHandler &PRadDataHandler::operator =(const PRadDataHandler &rhs)
 {
+    if(this == &rhs)
+        return *this;
+
     PRadDataHandler that(rhs);
     *this = std::move(that);
     return *this;
@@ -75,6 +78,9 @@ PRadDataHandler &PRadDataHandler::operator =(const PRadDataHandler &rhs)
 
 PRadDataHandler &PRadDataHandler::operator =(PRadDataHandler &&rhs)
 {
+    if(this == &rhs)
+        return *this;
+
     delete new_event;
     delete proc_event;
 

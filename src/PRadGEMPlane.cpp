@@ -70,6 +70,9 @@ PRadGEMPlane::~PRadGEMPlane()
 // copy assignment
 PRadGEMPlane &PRadGEMPlane::operator =(const PRadGEMPlane &rhs)
 {
+    if(this == &rhs)
+        return *this;
+
     PRadGEMPlane that(rhs);
     *this = std::move(that);
     return *this;
@@ -77,6 +80,9 @@ PRadGEMPlane &PRadGEMPlane::operator =(const PRadGEMPlane &rhs)
 
 PRadGEMPlane &PRadGEMPlane::operator =(PRadGEMPlane &&rhs)
 {
+    if(this == &rhs)
+        return *this;
+
     name = std::move(rhs.name);
     type = rhs.type;
     size = rhs.size;

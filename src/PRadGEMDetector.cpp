@@ -80,6 +80,9 @@ PRadGEMDetector::~PRadGEMDetector()
 // copy assignment operator
 PRadGEMDetector &PRadGEMDetector::operator =(const PRadGEMDetector &rhs)
 {
+    if(this == &rhs)
+        return *this;
+
     PRadGEMDetector that(rhs); // use copy constructor
     *this = std::move(that); // use move assignment
     return *this;
@@ -88,6 +91,9 @@ PRadGEMDetector &PRadGEMDetector::operator =(const PRadGEMDetector &rhs)
 // move assignment operator
 PRadGEMDetector &PRadGEMDetector::operator =(PRadGEMDetector &&rhs)
 {
+    if(this == &rhs)
+        return *this;
+
     PRadDetector::operator=(rhs);
     type = std::move(rhs.type);
     readout_board = std::move(rhs.readout_board);
@@ -236,7 +242,8 @@ void PRadGEMDetector::Reconstruct(PRadGEMCluster *gem_recon)
         return;
     gem_recon->CartesianReconstruct(plane_x->GetStripClusters(),
                                     plane_y->GetStripClusters(),
-                                    gem_hits);
+                                    gem_hits,
+                                    det_id);
 }
 
 // collect all the hits from APVs

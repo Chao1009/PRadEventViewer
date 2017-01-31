@@ -92,6 +92,9 @@ PRadADCChannel::~PRadADCChannel()
 // copy assignment operator
 PRadADCChannel &PRadADCChannel::operator =(const PRadADCChannel &rhs)
 {
+    if(this == &rhs)
+        return *this;
+
     PRadADCChannel that(rhs);
     *this = std::move(that);
     return *this;
@@ -100,6 +103,9 @@ PRadADCChannel &PRadADCChannel::operator =(const PRadADCChannel &rhs)
 // move assignment operator
 PRadADCChannel &PRadADCChannel::operator =(PRadADCChannel &&rhs)
 {
+    if(this == &rhs)
+        return *this;
+
     // release memories
     for(auto &it : hist_map)
         delete it.second;

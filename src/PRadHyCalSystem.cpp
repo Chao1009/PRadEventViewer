@@ -120,6 +120,9 @@ PRadHyCalSystem::~PRadHyCalSystem()
 // copy assignment operator
 PRadHyCalSystem &PRadHyCalSystem::operator =(const PRadHyCalSystem &rhs)
 {
+    if(this == &rhs)
+        return *this;
+
     PRadHyCalSystem that(rhs); // copy constructor
     *this = std::move(that); // move assignment operator
     return *this;
@@ -128,6 +131,9 @@ PRadHyCalSystem &PRadHyCalSystem::operator =(const PRadHyCalSystem &rhs)
 // move assignment operator
 PRadHyCalSystem &PRadHyCalSystem::operator =(PRadHyCalSystem &&rhs)
 {
+    if(this == &rhs)
+        return *this;
+
     ConfigObject::operator =(rhs);
 
     // release memories

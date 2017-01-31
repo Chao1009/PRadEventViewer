@@ -51,6 +51,9 @@ PRadTDCChannel::~PRadTDCChannel()
 // copy/move assignment operators
 PRadTDCChannel &PRadTDCChannel::operator =(const PRadTDCChannel &rhs)
 {
+    if(this == &rhs)
+        return *this;
+
     delete tdc_hist, tdc_hist = nullptr;
 
     PRadDAQChannel::operator =(rhs);
@@ -63,6 +66,9 @@ PRadTDCChannel &PRadTDCChannel::operator =(const PRadTDCChannel &rhs)
 
 PRadTDCChannel &PRadTDCChannel::operator =(PRadTDCChannel &&rhs)
 {
+    if(this == &rhs)
+        return *this;
+
     delete tdc_hist;
 
     PRadDAQChannel::operator =(rhs);

@@ -477,6 +477,7 @@ public:
 class GEMHit : public BaseHit
 {
 public:
+    int det_id;       // which GEM detector it belongs to
     float x_charge;   // x charge
     float y_charge;   // y charge
     float x_peak;     // x peak charge
@@ -485,13 +486,14 @@ public:
     int y_size;       // y hits size
 
     GEMHit()
-    : x_charge(0.), y_charge(0.), x_size(0), y_size(0)
+    : det_id(-1), x_charge(0.), y_charge(0.), x_peak(0.), y_peak(0.),
+      x_size(0), y_size(0)
     {};
 
     GEMHit(float x, float y, float z,
-               float xc, float yc, float xp, float yp, int xs, int ys)
-    : BaseHit(x, y, z, 0.),
-      x_charge(xc), y_charge(yc), x_peak(xp), y_peak(yp), x_size(xs), y_size(ys)
+           int d, float xc, float yc, float xp, float yp, int xs, int ys)
+    : BaseHit(x, y, z, 0.), det_id(d), x_charge(xc), y_charge(yc),
+      x_peak(xp), y_peak(yp), x_size(xs), y_size(ys)
     {};
 };
 //============================================================================//

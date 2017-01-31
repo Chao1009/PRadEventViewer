@@ -70,6 +70,9 @@ PRadHyCalModule::~PRadHyCalModule()
 // copy assignment operator
 PRadHyCalModule &PRadHyCalModule::operator =(const PRadHyCalModule &rhs)
 {
+    if(this == &rhs)
+        return *this;
+
     name = rhs.name;
     id = rhs.id;
     geometry = rhs.geometry;
@@ -80,6 +83,9 @@ PRadHyCalModule &PRadHyCalModule::operator =(const PRadHyCalModule &rhs)
 
 PRadHyCalModule &PRadHyCalModule::operator =(PRadHyCalModule &&rhs)
 {
+    if(this == &rhs)
+        return *this;
+
     name = std::move(rhs.name);
     id = rhs.id;
     geometry = rhs.geometry;
