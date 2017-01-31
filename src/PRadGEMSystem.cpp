@@ -534,11 +534,11 @@ void PRadGEMSystem::FillRawData(const GEMRawData &raw, EventData &event)
         } else {
             apv->ZeroSuppression();
 #ifdef MULTI_THREAD
-            locker.lock();
+            __gem_locker.lock();
 #endif
             apv->CollectZeroSupHits(event.get_gem_data());
 #ifdef MULTI_THREAD
-            locker.unlock();
+            __gem_locker.unlock();
 #endif
         }
     }
@@ -580,7 +580,7 @@ void PRadGEMSystem::FillZeroSupData(const std::vector<GEMZeroSupData> &data_pack
         FillZeroSupData(data);
 
 #ifdef MULTI_THREAD
-        locker.lock();
+        __gem_locker.lock();
 #endif
     // collect these zero-suppressed hits
     for(auto &fec : daq_slots)
@@ -589,7 +589,7 @@ void PRadGEMSystem::FillZeroSupData(const std::vector<GEMZeroSupData> &data_pack
             fec->APVControl(&PRadGEMAPV::CollectZeroSupHits, event.get_gem_data());
     }
 #ifdef MULTI_THREAD
-        locker.unlock();
+        __gem_locker.unlock();
 #endif
 }
 

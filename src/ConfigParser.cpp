@@ -235,7 +235,7 @@ void ConfigParser::buffer_process(string &buffer)
     string line;
     for(auto &c : buffer)
     {
-        if( c != '\n') {
+        if(c != '\n') {
             line += c;
         } else {
             lines.push(line);

@@ -43,8 +43,8 @@ int main(int argc, char *argv[])
 
     // initialize objects
     epics = new PRadEPICSystem("config/epics_channels.conf");
-    hycal = new PRadHyCalSystem("config/hycal.conf");
     gem = new PRadGEMSystem("config/gem.conf");
+    hycal = new PRadHyCalSystem("config/hycal.conf");
     coord_sys = new PRadCoordSystem("database/coordinates.dat");
     det_match = new PRadDetMatch("config/det_match.conf");
 

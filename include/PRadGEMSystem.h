@@ -12,11 +12,8 @@
 #include "PRadGEMFEC.h"
 #include "PRadGEMCluster.h"
 #include "ConfigObject.h"
-
-#ifdef MULTI_THREAD
-#include <thread>
 #include <mutex>
-#endif
+
 
 // fec id should be consecutive from 0
 // enlarge this value if there are more FECs
@@ -105,9 +102,8 @@ private:
     float def_zth;
     float def_ctth;
 
-#ifdef MULTI_THREAD
-    std::mutex locker;
-#endif
+    // a locker for multi threading
+    std::mutex __gem_locker;
 };
 
 #endif

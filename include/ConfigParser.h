@@ -41,6 +41,7 @@ public:
     // get current parsing status
     bool CheckElements(int num, int optional = 0);
     int NbofElements() const {return elements.size();};
+    int NbofLines() const {return lines.size();};
     int LineNumber() const {return line_number;};
     const std::string &CurrentLine() const {return current_line;};
 
@@ -106,6 +107,7 @@ public:
     const std::string &GetWhiteSpace() const {return white_space;};
     const std::vector<std::string> &GetCommentMarks() const {return comment_marks;};
     const std::pair<std::string, std::string> &GetCommentPair() const {return comment_pair;};
+
 
 private:
     // private functions

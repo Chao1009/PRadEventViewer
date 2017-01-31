@@ -96,13 +96,13 @@ void Evaluate(const string &file)
 
             hist_size.Fill(param.group_size);
             hist_msize.Fill(param.max_group_size);
-            hist_mene.Fill(param.max_hit_energy);
+            hist_mene.Fill(param.group_energy.maximum);
             hist_unif.Fill(param.max_group_energy.uniform);
             hist_rsq.Fill(param.max_group_line.rsq);
             hist_chisq.Fill(param.max_group_line.chisq);
 
-            if((param.max_hit_energy > 1.3 * beam_energy) ||
-               ((param.max_group_size == 1) && (param.max_hit_energy > 0.2 * beam_energy)) ||
+            if((param.group_energy.maximum > 1.3 * beam_energy) ||
+               ((param.max_group_size == 1) && (param.group_energy.maximum > 0.2 * beam_energy)) ||
                (param.max_group_size == 0))
                 dst_parser2.WriteEvent(event);
             else

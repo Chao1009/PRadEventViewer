@@ -17,32 +17,33 @@ struct LineParam
 
 struct EnergyParam
 {
-    double average;
+    double total;
     double maximum;
     double uniform;
 
     EnergyParam()
-    : average(0.), maximum(0.), uniform(10.)
+    : total(0.), maximum(0.), uniform(10.)
     {};
 };
 
 struct EventParam
 {
+    EnergyParam group_energy;
+    LineParam group_line;
     unsigned int group_size;
     unsigned int max_group_size;
-    double max_hit_energy;
     EnergyParam max_group_energy;
     LineParam max_group_line;
 
     EventParam()
-    : group_size(0), max_group_size(0), max_hit_energy(0.) {};
+    : group_size(0), max_group_size(0) {};
 
     std::vector<double> GetParamList()
     const
     {
         std::vector<double> params = {(double)group_size,
                                       (double)max_group_size,
-                                      max_hit_energy,
+                                      group_energy.maximum,
                                       max_group_energy.uniform,
                                       max_group_line.rsq,
                                       max_group_line.chisq};
@@ -51,8 +52,8 @@ struct EventParam
     }
 };
 
-double GetFiredModules(const PRadHyCalDetector *det, std::vector<PRadHyCalModule*> &m, double thres);
-unsigned int GroupHits(std::vector<PRadHyCalModule*> &hits, std::vector<std::vector<PRadHyCalModule*>> &groups);
+void GetFiredModules(const PRadHyCalDetector *det, std::vector<PRadHyCalModule*> &m, double thres);
+void GroupHits(std::vector<PRadHyCalModule*> &hits, std::vector<std::vector<PRadHyCalModule*>> &groups);
 LineParam LinearRegression(const std::vector<PRadHyCalModule*> &group);
 EnergyParam EvalEnergy(const std::vector<PRadHyCalModule*> &group);
 
@@ -60,12 +61,16 @@ EventParam AnalyzeEvent(PRadHyCalSystem *sys, const EventData &event, double thr
 {
     EventParam res;
     sys->ChooseEvent(event);
+    GetFiredModules(sys->GetDetector(), __modules, thres);
+    res.group_line = LinearRegression(__modules);
+    res.group_energy = EvalEnergy(__modules);
 
-    res.max_hit_energy = GetFiredModules(sys->GetDetector(), __modules, thres);
-    res.group_size = GroupHits(__modules, __groups);
+    GroupHits(__modules, __groups);
 
     if(__groups.empty())
         return res;
+
+    res.group_size = __groups.size();
 
     // find the group that has the most hits
     unsigned int max = 0;
@@ -89,23 +94,18 @@ EventParam AnalyzeEvent(PRadHyCalSystem *sys, const EventData &event, double thr
 }
 
 // fill fired modules with energy larger than threshold
-double GetFiredModules(const PRadHyCalDetector *det, std::vector<PRadHyCalModule*> &m, double thres)
+void GetFiredModules(const PRadHyCalDetector *det, std::vector<PRadHyCalModule*> &m, double thres)
 {
     m.clear();
-    double maximum = 0.;
+
     for(auto &module : det->GetModuleList())
     {
         double e = module->GetEnergy();
         if(e > thres)
         {
-            if(maximum < e)
-                maximum = e;
-
             m.push_back(module);
         }
     }
-
-    return maximum;
 }
 
 // get the hit distance normalized by module size
@@ -156,7 +156,7 @@ bool FillGroup(PRadHyCalModule *hit, std::vector<std::vector<PRadHyCalModule*>> 
 }
 
 // group the adjacent hits
-unsigned int GroupHits(std::vector<PRadHyCalModule*> &hits, std::vector<std::vector<PRadHyCalModule*>> &groups)
+void GroupHits(std::vector<PRadHyCalModule*> &hits, std::vector<std::vector<PRadHyCalModule*>> &groups)
 {
     groups.clear();
 
@@ -185,8 +185,6 @@ unsigned int GroupHits(std::vector<PRadHyCalModule*> &hits, std::vector<std::vec
             }
         }
     }
-
-    return groups.size();
 }
 
 LineParam LinearRegression(const std::vector<PRadHyCalModule*> &group)
@@ -247,7 +245,7 @@ EnergyParam EvalEnergy(const std::vector<PRadHyCalModule*> &group)
 {
     EnergyParam res;
 
-    res.average = 0.;
+    res.total = 0.;
     res.maximum = 0.;
     for(auto &hit : group)
     {
@@ -255,10 +253,10 @@ EnergyParam EvalEnergy(const std::vector<PRadHyCalModule*> &group)
         if(e > res.maximum)
             res.maximum = e;
 
-        res.average += e;
+        res.total += e;
     }
 
-    res.average /= (double)group.size();
+    double average = res.total/(double)group.size();
 
 
     if(group.size() < 2)
@@ -268,7 +266,7 @@ EnergyParam EvalEnergy(const std::vector<PRadHyCalModule*> &group)
     res.uniform = 0.;
     for(auto &hit : group)
     {
-        res.uniform += fabs(hit->GetEnergy() - res.average)/res.average;
+        res.uniform += fabs(hit->GetEnergy() - average)/average;
     }
     res.uniform /= (double)(group.size() - 1);
 
