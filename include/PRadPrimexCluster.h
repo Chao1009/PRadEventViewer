@@ -10,67 +10,21 @@
 //used for HyCal cluster reconstruction
 
 //define some global constants
+#define MAX_CC 60
 #define MSECT 5
 #define MCOL 34
 #define MROW 34
 
-#define CRYSTAL_BLOCKS 1156 // 34x34 array (2x2 hole in the center)
-#define GLASS_BLOCKS 900    // 30x30 array holes are also counted (18x18 in the center)
-#define BLANK_BLOCKS 100    // For simplifying indexes
-
-#define T_BLOCKS 2156
-
-#define MAX_HHITS 1728 // For Hycal
-#define MAX_CC 60
-
-#define nint_phot_cell  5
-#define ncoef_phot_cell 3
-#define dcorr_phot_cell 16
-
-#define CRYS_HALF_ROWS 17 //CRYS_ROWS/2
-#define GLASS_HALF_ROWS 15 //GLASS_ROWS/2
-#define CRYS_HALF_SIZE_X 1.0385   // CRYS_SIZE_X/2
-#define CRYS_HALF_SIZE_Y 1.0375   // CRYS_SIZE_Y/2
-#define GLASS_HALF_SIZE 1.9075    // GLASS_SIZE/2
-#define GLASS_OFFSET_X CRYS_SIZE_X*CRYS_ROWS //Distance from center to glass by X axis
-#define GLASS_OFFSET_Y CRYS_SIZE_Y*CRYS_ROWS //Distance from center to glass by Y axis
-
-#define CRYS_ROWS 34
-#define GLASS_ROWS 30
 #define CRYS_SIZE_X 2.077   // real X-size of crystal
 #define CRYS_SIZE_Y 2.075   // real Y-size of crystal
 #define GLASS_SIZE 3.815    // real size of glass
-
-typedef struct
-{
-    int id;                 // ID of block
-    float x;                // Center of block x-coord
-    float y;                // Center of block y-coord
-    int sector;             // 0 for W, 1 - 4 for Glass (clockwise starting at noon)
-    int row;                // row number within sector
-    int col;                // column number within sector
-} blockINFO_t;
-
-
-typedef struct
-{
-    int  id[MAX_CC];   // ID of ith block, where i runs from 0 to 8
-    float E[MAX_CC];   // Energy of ith block
-    float x[MAX_CC];   // Center of ith block x-coord
-    float y[MAX_CC];   // Center of ith block y-coord
-} cluster_t;
-
-typedef struct
-{
-    int  id;   // ID of ADC
-    float e;   // Energy of ADC
-} cluster_block_t;
 
 extern "C"
 {
     void load_pwo_prof_(char* config_dir, int str_len);
     void load_lg_prof_(char* config_dir, int str_len);
     void main_island_();
+
     extern struct
     {
         int ech[MROW][MCOL];

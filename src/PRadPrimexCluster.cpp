@@ -8,10 +8,12 @@
 #include "PRadPrimexCluster.h"
 
 
+
+
+#define ICH(M,N) __prcl_ich[N-1][M-1]
 // a temporary storage to convert row and col back to id
 // which is needed in fetching result from island.F
-int __prcl_ich[MROW][MCOL];
-#define ICH(M,N) __prcl_ich[N-1][M-1]
+static int __prcl_ich[MROW][MCOL];
 
 PRadPrimexCluster::PRadPrimexCluster(const std::string &path)
 {
@@ -235,13 +237,13 @@ const
 
     for(int k = 0; k < adcgam_cbk_.nadcgam; ++k)
     {
-        int dime = adcgam_cbk_.u.iadcgam[k][8];
+        int ncl = std::min(adcgam_cbk_.u.iadcgam[k][8], MAX_CC);
         ModuleCluster cluster;
         // GeV to MeV
         cluster.energy = adcgam_cbk_.u.fadcgam[k][0]*1000.;
         cluster.leakage = cluster.energy;
 
-        for(int j = 0; j < (dime>MAX_CC ? MAX_CC : dime); ++j)
+        for(int j = 0; j < ncl; ++j)
         {
             int add = ICL_INDEX(k,j);
             int kx = (add/100), ky = add%100;
