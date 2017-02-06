@@ -143,27 +143,42 @@ bool ConfigParser::ParseLine()
         return parse_buffer();
 }
 
-// parse a input string (line)
-// trim the white space and split the string into elements by defined splitters
-// the elements will be further trimmed
-void ConfigParser::ParseLine(const string &line, const bool &count)
+// parse the whole file all buffer
+bool ConfigParser::ParseAll()
 {
-    if(count)
-        ++line_number;
+    elements.clear();
+    if(infile.is_open()) {
+        while(parse_file()) {;}
+    } else {
+        while(parse_buffer()) {;}
+    }
 
+    return !(elements.empty());
+}
+
+// parse a input string, trim the white space and split the string into elements
+// by defined splitters, the elements will also be trimmed
+int ConfigParser::ParseString(const string &line)
+{
     string trim_line = trim(comment_out(line), white_space);
 
     deque<string> eles = split(trim_line, splitters);
 
-    while(eles.size())
+    int count = 0;
+    for(auto &ele : eles)
     {
-        string ele = trim(eles.front(), white_space);
-        if(ele.size())
-            elements.push_back(ele);
-        eles.pop_front();
+        string trim_ele = trim(ele, white_space);
+        if(ele.size()) {
+            elements.emplace_back(move(trim_ele));
+            count++;
+        }
     }
+
+    return count;
 }
 
+// check if the current elemtns number is in the range [num, num + optional]
+// output a warning message if not
 bool ConfigParser::CheckElements(int num, int optional)
 {
     string num_str;
@@ -207,7 +222,8 @@ bool ConfigParser::CheckElements(int num, int optional)
 ConfigValue ConfigParser::TakeFirst()
 {
     if(elements.empty()) {
-        cout << "Config Parser: WARNING, trying to take elements while there is nothing, 0 value returned." << endl;
+        cout << "Config Parser Warning: Trying to take elements while there is "
+             << "nothing, 0 value returned." << endl;
         return ConfigValue("0");
     }
 
@@ -246,29 +262,31 @@ void ConfigParser::buffer_process(string &buffer)
 
 // take a line from opened file and parse it
 // comment with comment pair will be removed here
-inline bool ConfigParser::parse_file()
+bool ConfigParser::parse_file()
 {
+    int count = 0;
     // comment pair needs to be taken care here
-    while(elements.empty())
+    while(!count)
     {
+        // end of file
         if(!getline(infile, current_line))
-            return false; // end of file
+            return false;
+
+        // count the line parsed
+        ++line_number;
 
         // no need to take care comment pair
         if(comment_pair.first.empty() || comment_pair.second.empty()) {
-            ParseLine(current_line);
+            count = ParseString(current_line);
         } else {
             // if we had comment pair opened
             if(in_comment_pair) {
                 // see if there is an end to the comment pair
                 auto c_end = current_line.find(comment_pair.second);
+                // end of a comment pair
                 if(c_end != string::npos) {
-                    // end of a comment pair
-                    ParseLine(current_line.substr(c_end + comment_pair.second.size()));
+                    count = ParseString(current_line.substr(c_end + comment_pair.second.size()));
                     in_comment_pair = false;
-                } else {
-                    // still inside a comment pair
-                    ParseLine("");
                 }
             // if no previous comment pair opened
             } else {
@@ -279,11 +297,11 @@ inline bool ConfigParser::parse_file()
                 auto c_beg = current_line.find(comment_pair.first);
                 // find comment pair openning
                 if(c_beg != string::npos) {
-                    ParseLine(current_line.substr(0, c_beg));
+                    count = ParseString(current_line.substr(0, c_beg));
                     in_comment_pair = true;
                 } else {
                     // no special treatment
-                    ParseLine(current_line);
+                    count = ParseString(current_line);
                 }
             }
         }
@@ -294,17 +312,23 @@ inline bool ConfigParser::parse_file()
 
 // take a line from the stored lines buffer and parse it
 // comment by comment pair has been already removed before going into the lines
-inline bool ConfigParser::parse_buffer()
+bool ConfigParser::parse_buffer()
 {
     // comment pair has been taken care before breaking into lines,
     // so it's simple here
-    while(elements.empty())
+    int count = 0;
+    while(!count)
     {
+        // end of buffer
         if(lines.empty())
-            return false; // end of buffer
+            return false;
+
+        // count the line parsed
+        ++line_number;
+
         current_line = move(lines.front());
         lines.pop_front();
-        ParseLine(current_line);
+        count = ParseString(current_line);
     }
 
     return true; // parsed a line
@@ -375,12 +399,10 @@ deque<string> ConfigParser::split(const string &str, const string &s)
     strcpy(cstr, str.c_str());
 
     char *pch = strtok(cstr, s.c_str());
-    string ele;
 
     while(pch != nullptr)
     {
-        ele = pch;
-        eles.push_back(pch);
+        eles.emplace_back(pch);
         pch = strtok(nullptr, s.c_str());
     }
 

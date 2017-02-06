@@ -35,8 +35,10 @@ public:
 
     // parse line, return false if no more line to parse
     bool ParseLine();
-    // parse a string as a line, by default it will count it into line_number
-    void ParseLine(const std::string &line, const bool &count = true);
+    // parse the whole file or buffer, return false if no elements found
+    bool ParseAll();
+    // parse a string, trim and split it into elements
+    int ParseString(const std::string &line);
 
     // get current parsing status
     bool CheckElements(int num, int optional = 0);
