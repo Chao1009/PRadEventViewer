@@ -109,7 +109,7 @@ void ConfigParser::Clear()
 {
     line_number = 0;
     infile.close();
-    deque<string>().swap(lines);
+    lines.clear();
 }
 
 // close file
@@ -135,7 +135,7 @@ string ConfigParser::TakeLine()
 // return false if empty
 bool ConfigParser::ParseLine()
 {
-    deque<string>().swap(elements);
+    elements.clear();
 
     if(infile.is_open())
         return parse_file();
