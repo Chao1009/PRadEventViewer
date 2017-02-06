@@ -28,7 +28,9 @@ int main(int argc, char *argv[])
         return 0;
     }
 
+    PRadBenchMark timer;
     PRadHyCalSystem *hycal_sys = new PRadHyCalSystem("config/hycal.conf");
+    cout << timer.GetElapsedTime() << endl;
 
     for(int i = 1; i < argc; ++i)
     {

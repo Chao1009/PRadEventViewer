@@ -109,7 +109,7 @@ void ConfigParser::Clear()
 {
     line_number = 0;
     infile.close();
-    queue<string>().swap(lines);
+    deque<string>().swap(lines);
 }
 
 // close file
@@ -123,7 +123,7 @@ string ConfigParser::TakeLine()
 {
     if(lines.size()) {
         string out = lines.front();
-        lines.pop();
+        lines.pop_front();
         return out;
     }
 
@@ -135,7 +135,7 @@ string ConfigParser::TakeLine()
 // return false if empty
 bool ConfigParser::ParseLine()
 {
-    queue<string>().swap(elements);
+    deque<string>().swap(elements);
 
     if(infile.is_open())
         return parse_file();
@@ -153,14 +153,14 @@ void ConfigParser::ParseLine(const string &line, const bool &count)
 
     string trim_line = trim(comment_out(line), white_space);
 
-    queue<string> eles = split(trim_line, splitters);
+    deque<string> eles = split(trim_line, splitters);
 
     while(eles.size())
     {
         string ele = trim(eles.front(), white_space);
         if(ele.size())
-            elements.push(ele);
-        eles.pop();
+            elements.push_back(ele);
+        eles.pop_front();
     }
 }
 
@@ -212,7 +212,7 @@ ConfigValue ConfigParser::TakeFirst()
     }
 
     ConfigValue output(move(elements.front()));
-    elements.pop();
+    elements.pop_front();
 
     return output;
 }
@@ -238,7 +238,7 @@ void ConfigParser::buffer_process(string &buffer)
         if(c != '\n') {
             line += c;
         } else {
-            lines.push(line);
+            lines.push_back(line);
             line.clear();
         }
     }
@@ -303,7 +303,7 @@ inline bool ConfigParser::parse_buffer()
         if(lines.empty())
             return false; // end of buffer
         current_line = move(lines.front());
-        lines.pop();
+        lines.pop_front();
         ParseLine(current_line);
     }
 
@@ -366,21 +366,21 @@ string ConfigParser::trim(const string &str, const string &w)
 }
 
 // split a string into several pieces by all the characters defined as splitter
-queue<string> ConfigParser::split(const string &str, const string &s)
+deque<string> ConfigParser::split(const string &str, const string &s)
 {
-    queue<string> eles;
+    deque<string> eles;
 
     char *cstr = new char[str.length() + 1];
 
     strcpy(cstr, str.c_str());
 
-    char *pch = strtok(&cstr[0], s.c_str());
+    char *pch = strtok(cstr, s.c_str());
     string ele;
 
     while(pch != nullptr)
     {
         ele = pch;
-        eles.push(pch);
+        eles.push_back(pch);
         pch = strtok(nullptr, s.c_str());
     }
 

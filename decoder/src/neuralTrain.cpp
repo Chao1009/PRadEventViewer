@@ -150,7 +150,7 @@ int main(int argc, char *argv[])
         while(vals.size())
         {
             string val = move(vals.front());
-            vals.pop();
+            vals.pop_front();
             hidden.push_back(stoi(val));
         }
     }

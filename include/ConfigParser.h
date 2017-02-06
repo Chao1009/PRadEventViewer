@@ -5,7 +5,7 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
-#include <queue>
+#include <deque>
 #include "ConfigValue.h"
 
 // config parser class
@@ -72,7 +72,7 @@ public:
                 break;
 
             *it = elements.front();
-            elements.pop();
+            elements.pop_front();
         }
         return count;
     }
@@ -84,7 +84,7 @@ public:
         while(elements.size())
         {
             res.emplace_back(std::move(elements.front()));
-            elements.pop();
+            elements.pop_front();
         }
         return res;
     }
@@ -96,7 +96,7 @@ public:
         while(elements.size())
         {
             ConfigValue tmp(std::move(elements.front()));
-            elements.pop();
+            elements.pop_front();
             res.emplace_back(tmp.Convert<T>());
         }
         return res;
@@ -122,11 +122,11 @@ private:
     std::string white_space;
     std::vector<std::string> comment_marks;
     std::pair<std::string, std::string> comment_pair;
-    std::queue<std::string> lines;
+    std::deque<std::string> lines;
+    std::deque<std::string> elements;
     std::string current_line;
     int line_number;
     bool in_comment_pair;
-    std::queue<std::string> elements;
     std::ifstream infile;
 
 public:
@@ -134,7 +134,7 @@ public:
     static bool comment_between(std::string &str, const std::string &open, const std::string &close);
     static std::string comment_out(const std::string &str, const std::string &c);
     static std::string trim(const std::string &str, const std::string &w);
-    static std::queue<std::string> split(const std::string &str, const std::string &s);
+    static std::deque<std::string> split(const std::string &str, const std::string &s);
     static std::string str_remove(const std::string &str, const std::string &ignore);
     static std::string str_replace(const std::string &str, const std::string &ignore, const char &rc = ' ');
     static std::string str_lower(const std::string &str);

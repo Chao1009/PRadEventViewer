@@ -52,7 +52,7 @@ void PRadGEMCluster::Configure(const std::string &path)
     while(dists.size())
     {
 	    std::string dist = ConfigParser::trim(dists.front(), " \t"); // trim off white spaces
-	    dists.pop();
+	    dists.pop_front();
 	    charac_distance.push_back(std::stod(dist)); // convert string to double and save it
     }
 }
