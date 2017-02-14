@@ -22,6 +22,7 @@ public:
     void ListKeys() const;
     bool HasKey(const std::string &name) const;
 
+    bool ReadConfigFile(const std::string &path);
     void SetConfigValue(const std::string &var_name, const ConfigValue &c_value);
     void SetIgnoreChars(const std::string &ignore) {ignore_chars = ignore;};
     void SetSplitChars(const std::string &splitter) {split_chars = splitter;};
@@ -50,7 +51,6 @@ public:
 
 protected:
     // protected member functions
-    bool readConfigFile(const std::string &path);
     ConfigValue form(const std::string &input,
                      const std::string &open = "{",
                      const std::string &close = "}") const;
@@ -62,6 +62,10 @@ protected:
     {
         return getDefConfig(var_name, ConfigValue(val), verbose).Convert<T>();
     }
+
+private:
+    void parseControl(const std::string &control_word);
+    void parseTerm(std::string &&var_name, std::string &&var_value);
 
 protected:
     std::string split_chars;

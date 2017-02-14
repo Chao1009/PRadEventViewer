@@ -113,10 +113,10 @@ public:
 
 private:
     // private functions
-    void buffer_process(std::string &buffer);
-    bool parse_file();
-    bool parse_buffer();
-    std::string comment_out(const std::string &str, size_t index = 0);
+    void bufferProcess(std::string &buffer);
+    bool parseFile();
+    bool parseBuffer();
+    size_t getCommentPoint(const std::string &str);
 
 private:
     // private members
@@ -137,6 +137,7 @@ public:
     static std::string comment_out(const std::string &str, const std::string &c);
     static std::string trim(const std::string &str, const std::string &w);
     static std::deque<std::string> split(const std::string &str, const std::string &s);
+    static std::deque<std::string> split(const char* str, const size_t &size, const std::string &s);
     static std::string str_remove(const std::string &str, const std::string &ignore);
     static std::string str_replace(const std::string &str, const std::string &ignore, const char &rc = ' ');
     static std::string str_lower(const std::string &str);

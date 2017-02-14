@@ -38,7 +38,7 @@ void PRadDetMatch::Configure(const std::string &path)
     bool verbose = false;
 
     if(!path.empty()) {
-        readConfigFile(path);
+        ConfigObject::Configure(path);
         verbose = true;
     }
 

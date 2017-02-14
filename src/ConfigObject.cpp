@@ -42,8 +42,14 @@ ConfigObject::~ConfigObject()
 // configure the cluster method
 void ConfigObject::Configure(const std::string &path)
 {
-    // only read configuration file in
-    readConfigFile(path);
+    // save the path
+    config_path = path;
+
+    // clear the map
+    config_map.clear();
+
+    // read configuration file in
+    ReadConfigFile(path);
 }
 
 // clear all the loaded configuration values
@@ -51,6 +57,43 @@ void ConfigObject::ClearConfig()
 {
     config_path = "";
     config_map.clear();
+}
+
+// read configuration file and build the configuration map
+bool ConfigObject::ReadConfigFile(const std::string &path)
+{
+    ConfigParser c_parser(split_chars); // self-defined splitters
+
+    if(!c_parser.ReadFile(path)) {
+        std::cerr << "Cannot open configuration file "
+                  << "\"" << path << "\""
+                  << std::endl;
+        return false;
+    }
+
+    while(c_parser.ParseLine())
+    {
+        // possible control words
+        if(c_parser.NbofElements() == 1) {
+            std::string control = c_parser.TakeFirst();
+            parseControl(control);
+        }
+        // var_name and var_value
+        else if (c_parser.NbofElements() == 2) {
+            std::string var_name, key, var_value;
+            c_parser >> var_name >> var_value;
+            parseTerm(std::move(var_name), std::move(var_value));
+        }
+        // unsupported format
+        else {
+            std::cout << "Warning: Unsupported configuration file format "
+                      << "at line " << c_parser.LineNumber()
+                      << std::endl
+                      << "\"" << c_parser.CurrentLine() << "\""
+                      << std::endl;
+        }
+    }
+    return true;
 }
 
 // check if a certain term is configured
@@ -135,44 +178,6 @@ void ConfigObject::SetConfigValue(const std::string &var_name, const ConfigValue
 // Protected Member Function                                                  //
 //============================================================================//
 
-// read configuration file and build the configuration map
-bool ConfigObject::readConfigFile(const std::string &path)
-{
-    ConfigParser c_parser(split_chars); // self-defined splitters
-
-    if(!c_parser.ReadFile(path)) {
-        std::cerr << "Cannot open configuration file "
-                  << "\"" << path << "\""
-                  << std::endl;
-        return false;
-    }
-
-    // save the path
-    config_path = path;
-
-    // clear the map
-    config_map.clear();
-
-    while(c_parser.ParseLine())
-    {
-        if (c_parser.NbofElements() != 2)
-            continue;
-
-        std::string var_name, key, var_value;
-        c_parser >> var_name >> var_value;
-
-        // convert to lower case and remove uninterested characters
-        key = ConfigParser::str_lower(ConfigParser::str_remove(var_name, ignore_chars));
-
-        auto it = config_map.find(key);
-        if(it != config_map.end())
-            it->second += ", " + var_value;
-        else
-            config_map[key] = var_value;
-    }
-    return true;
-}
-
 // get configuration value from the map
 // if no such config value exists, it will fill the default value in
 ConfigValue ConfigObject::getDefConfig(const std::string &name,
@@ -220,4 +225,51 @@ const
     }
 
     return ConfigValue(std::move(result));
+}
+
+
+
+//============================================================================//
+// Private Member Function                                                    //
+//============================================================================//
+
+// parse the control word and respond
+void ConfigObject::parseControl(const std::string &word)
+{
+    if(ConfigParser::str_upper(word.substr(0, 7)) == "INCLUDE") {
+        // need the most outer pair
+        auto pairs = ConfigParser::find_pairs(word, "(", ")");
+        // not find pair
+        if(pairs.empty()) {
+            std::cout << "Unsupported control word format: " << word << "."
+                      << "Expected: INCLUDE(path)"
+                      << std::endl;
+            return;
+        }
+        int begin = pairs.back().first + 1;
+        int length = pairs.back().second - begin;
+        std::string path = word.substr(begin, length);
+        ReadConfigFile(path);
+    }
+    else {
+        std::cout << "Unsupported control word: " << word << std::endl;
+    }
+}
+
+// parse the configuration term
+void ConfigObject::parseTerm(std::string &&var_name, std::string &&var_value)
+{
+    // convert to lower case and remove uninterested characters
+    std::string key = ConfigParser::str_lower(ConfigParser::str_remove(var_name, ignore_chars));
+
+    if(key.back() == '+') {
+        key.pop_back();
+        auto it = config_map.find(key);
+        if(it != config_map.end())
+            it->second += var_value;
+        else
+            config_map[key] = var_value;
+    } else {
+        config_map[key] = var_value;
+    }
 }
