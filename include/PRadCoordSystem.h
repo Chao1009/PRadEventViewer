@@ -138,7 +138,7 @@ public:
     // z-projection
     // by default it projects to HyCal surface from origin
     template<class T>
-    void Projection(T &t, const Point &pi = origin(),
+    void Projection(T &t, const Point &pi = target(),
                     int det_id = (int)PRadDetector::HyCal)
     const
     {
@@ -158,7 +158,7 @@ public:
     }
 
     template<class T>
-    void Projection(T *t, int NCluster, const Point &pi = origin(),
+    void Projection(T *t, int NCluster, const Point &pi = target(),
                     int det_id = (int)PRadDetector::HyCal)
     const
     {
@@ -181,7 +181,7 @@ public:
     }
 
     template<class T_it>
-    void Projection(T_it first, T_it last, const Point &pi = origin(),
+    void Projection(T_it first, T_it last, const Point &pi = target(),
                     int det_id = (int)PRadDetector::HyCal)
     const
     {
@@ -197,6 +197,7 @@ public:
     //static public members
     static Point beamLine(float z);
     static Point origin();
+    static Point target();
     // basic projection functions
     static void Projection(float &x, float &y, float &z,
                            const float &xi, const float &yi, const float &zi,
