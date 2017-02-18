@@ -137,6 +137,9 @@ const
     if(ch >= epics_values.size())
         return EPICS_UNDEFINED_VALUE;
 
+    if(epics_data.size())
+        return epics_data.back().values.at(ch);
+
     return epics_values.at(ch);
 }
 

@@ -142,7 +142,7 @@ int main(int argc, char * argv [])
                 coord_sys->Transform(gem1->GetDetID(), gem1_hits.begin(), gem1_hits.end());
                 coord_sys->Transform(gem2->GetDetID(), gem2_hits.begin(), gem2_hits.end());
 
-                // projection, default projection is from origin to hycal surface
+                // projection, default projection is from target to hycal surface
                 coord_sys->Projection(hycal_hits.begin(), hycal_hits.end());
                 coord_sys->Projection(gem1_hits.begin(), gem1_hits.end());
                 coord_sys->Projection(gem2_hits.begin(), gem2_hits.end());
@@ -161,13 +161,11 @@ int main(int argc, char * argv [])
                     myhits[i] = hycal_hits[i];
                 }
 
-                for(auto idx : matched)
+                // set the matched gem position
+                for(auto hit : matched)
                 {
-                    if(idx.gem1 >= 0) {
-                        myhits[idx.hycal] = gem1_hits[idx.gem1];
-                    } else if(idx.gem2 >= 0) {
-                        myhits[idx.hycal] = gem2_hits[idx.gem2];
-                    }
+                    myhits[hit.hycal_idx].x_gem = hit.x;
+                    myhits[hit.hycal_idx].y_gem = hit.y;
                 }
 
 	            //get beam energy
@@ -184,7 +182,8 @@ int main(int argc, char * argv [])
                     MultiHitAnalyzer(myhits, clusterN);
                 }
 
-            }else if(dst_parser->EventType() == PRadDSTParser::Type::epics) {
+            }
+            else if(dst_parser->EventType() == PRadDSTParser::Type::epics) {
                 const auto &epics_ev = dst_parser->GetEPICSEvent();
 	            // save epics into handler, otherwise get epicsvalue won't work
 	            epics->AddEvent(epics_ev);

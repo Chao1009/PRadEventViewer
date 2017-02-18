@@ -1365,8 +1365,8 @@ void PRadEventViewer::showReconEvent()
         if(reconSetting->ShowMatchedDetector(PRadDetector::HyCal)) {
             for(auto &m : matched)
             {
-                QPointF p(CARTESIAN_TO_HYCALSCENE(hycal_hit[m.hycal].x, hycal_hit[m.hycal].y));
-                HyCal->AddHitsMark("HyCal Hit", p, attr, QString::number(hycal_hit[m.hycal].E) + "MeV");
+                QPointF p(CARTESIAN_TO_HYCALSCENE(m.hycal.x, m.hycal.y));
+                HyCal->AddHitsMark("HyCal Hit", p, attr, QString::number(m.E) + "MeV");
             }
         } else {
             for(auto &hit : hycal_hit)
@@ -1385,8 +1385,8 @@ void PRadEventViewer::showReconEvent()
         if(reconSetting->ShowMatchedDetector(PRadDetector::PRadGEM1)) {
             for(auto &m : matched)
             {
-                if(m.gem1 != -1) {
-                    QPointF p(CARTESIAN_TO_HYCALSCENE(gem1_hit[m.gem1].x, gem1_hit[m.gem1].y));
+                if(TEST_BIT(m.hycal.flag, kGEM1Match)) {
+                    QPointF p(CARTESIAN_TO_HYCALSCENE(m.gem1.front().x, m.gem1.front().y));
                     HyCal->AddHitsMark("GEM1 Hit", p, attr);
                 }
             }
@@ -1406,8 +1406,8 @@ void PRadEventViewer::showReconEvent()
         if(reconSetting->ShowMatchedDetector(PRadDetector::PRadGEM2)) {
             for(auto &m : matched)
             {
-                if(m.gem2 != -1) {
-                    QPointF p(CARTESIAN_TO_HYCALSCENE(gem2_hit[m.gem2].x, gem2_hit[m.gem2].y));
+                if(TEST_BIT(m.hycal.flag, kGEM2Match)) {
+                    QPointF p(CARTESIAN_TO_HYCALSCENE(m.gem2.front().x, m.gem2.front().y));
                     HyCal->AddHitsMark("GEM2 Hit", p, attr);
                 }
             }

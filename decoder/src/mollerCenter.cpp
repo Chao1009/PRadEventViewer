@@ -109,6 +109,8 @@ void FillMollerEvents(const string &dst_path, MollerData &data)
     PRadGEMDetector *gem_det1 = gem->GetDetector("PRadGEM1");
     PRadGEMDetector *gem_det2 = gem->GetDetector("PRadGEM2");
 
+    float beam_energy = 0.;
+
     while(dst_parser->Read())
     {
         if(dst_parser->EventType() == PRadDSTParser::Type::event) {
@@ -134,40 +136,30 @@ void FillMollerEvents(const string &dst_path, MollerData &data)
             auto gem2_hit = gem->GetDetector("PRadGEM2")->GetHits();
 
             // coordinates transform, projection
-            // you can either pass iterators
             coord_sys->Transform(hycal_det->GetDetID(), hycal_hit.begin(), hycal_hit.end());
             coord_sys->Transform(gem_det1->GetDetID(), gem1_hit.begin(), gem1_hit.end());
             coord_sys->Transform(gem_det2->GetDetID(), gem2_hit.begin(), gem2_hit.end());
-            // or arrays
-            coord_sys->Projection(hycal_hit.begin(), hycal_hit.end());
-            coord_sys->Projection(gem1_hit.begin(), gem1_hit.end());
-            coord_sys->Projection(gem2_hit.begin(), gem2_hit.end());
 
             // hits matching, return matched index
             auto matched = det_match->Match(hycal_hit, gem1_hit, gem2_hit);
+
+            // project the hits to HyCal plane
+            coord_sys->Projection(matched.begin(), matched.end());
 
             // we need clean double arm Moller
             if(matched.size() != 2)
                 continue;
 
-            const HyCalHit &h1 = hycal_hit.at(matched.at(0).hycal);
-            const GEMHit &g1 = (matched.at(0).gem1 < 0)?
-                               gem2_hit.at(matched.at(0).gem2) :
-                               gem1_hit.at(matched.at(0).gem1);
-
-            const HyCalHit &h2 = hycal_hit.at(matched.at(1).hycal);
-            const GEMHit &g2 = (matched.at(1).gem1 < 0)?
-                               gem2_hit.at(matched.at(1).gem2) :
-                               gem1_hit.at(matched.at(1).gem1);
+            const auto &hit1 = matched.at(0);
+            const auto &hit2 = matched.at(1);
 
             // two moller points
-            DataPoint moller1(g1.x, g1.y, h1.E);
-            DataPoint moller2(g2.x, g2.y, h2.E);
+            DataPoint moller1(hit1.x, hit1.y, hit1.E);
+            DataPoint moller2(hit2.x, hit2.y, hit2.E);
 
             bool good_moller = true;
-            float beam_energy = 1097;
             // check if energy is good
-            if(fabs(h1.E + h2.E - beam_energy) >= 0.2*beam_energy)
+            if(fabs(hit1.E + hit2.E - beam_energy) >= 0.2*beam_energy)
                 good_moller = false;
 
             if(good_moller)
@@ -176,6 +168,7 @@ void FillMollerEvents(const string &dst_path, MollerData &data)
         } else if(dst_parser->EventType() == PRadDSTParser::Type::epics) {
             // save epics into handler, otherwise get epicsvalue won't work
             epics->AddEvent(dst_parser->GetEPICSEvent());
+            beam_energy = epics->GetValue("MBSY2C_energy");
         }
     }
 

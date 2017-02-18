@@ -19,6 +19,8 @@
 
 #include "PRadDetMatch.h"
 #include "PRadCoordSystem.h"
+#include <algorithm>
+#include <set>
 
 // constructor
 PRadDetMatch::PRadDetMatch(const std::string &path)
@@ -50,34 +52,84 @@ void PRadDetMatch::Configure(const std::string &path)
     overlapSigma = getDefConfig<float>("GEM_Overlap_Factor", 10, verbose);
 }
 
-std::vector<MatchedIndex> PRadDetMatch::Match(std::vector<HyCalHit> &hycal,
-                                              std::vector<GEMHit> &gem1,
-                                              std::vector<GEMHit> &gem2)
+template<typename T>
+inline bool is_in(const std::set<T> &s, const T &i)
+{
+    return s.find(i) != s.end();
+}
+
+// define operator for set
+// in this definition, if two gem hits are from the same gem detector and have
+// the same reconstructed x, y, then they are the same hits
+bool operator <(const GEMHit &lhs, const GEMHit &rhs)
+{
+    if(lhs.det_id != rhs.det_id)
+        return lhs.det_id < rhs.det_id;
+
+    if(lhs.x != rhs.x)
+        return lhs.x < rhs.x;
+
+    return lhs.y < rhs.y;
+};
+
+std::vector<MatchHit> PRadDetMatch::Match(std::vector<HyCalHit> &hycal,
+                                          const std::vector<GEMHit> &gem1,
+                                          const std::vector<GEMHit> &gem2)
 const
 {
-    std::vector<MatchedIndex> result;
+    std::vector<MatchHit> result;
+    std::set<GEMHit> matched1, matched2;
+    std::vector<GEMHit> cand1, cand2;
+
+    // sort in energy descendant order
+    std::sort(hycal.begin(), hycal.end(), [] (const HyCalHit &h1, const HyCalHit &h2)
+                                          {
+                                              return h2.E < h1.E;
+                                          });
 
     for(size_t i = 0; i < hycal.size(); ++i)
     {
-        MatchedIndex index(i);
+        const auto &hit = hycal.at(i);
+
+        // clean up cand1 and cand2 first
+        cand1.clear();
+        cand2.clear();
 
         // pre match, only check if distance is within the range
         // fill in hits as candidates
-        for(size_t j = 0; j < gem1.size(); ++j)
+        for(auto &ghit : gem1)
         {
-            if(PreMatch(hycal[i], gem1[j]))
-                index.gem1_cand.push_back(j);
+            if(PreMatch(hit, ghit) && !is_in(matched1, ghit))
+                cand1.push_back(ghit);
         }
-        for(size_t j = 0; j < gem2.size(); ++j)
+        for(auto &ghit : gem2)
         {
-            if(PreMatch(hycal[i], gem2[j]))
-                index.gem2_cand.push_back(j);
+            if(PreMatch(hit, ghit) && !is_in(matched2, ghit))
+                cand2.push_back(ghit);
         }
 
-        // post match, do further check, which one is the closest
-        // and if the two gem hits are overlapped
-        if(PostMatch(index, hycal[i], &gem1[0], &gem2[0]))
-            result.push_back(index);
+        // no candidates
+        if(cand1.empty() && cand2.empty())
+            continue;
+
+        // create a new MatchHit
+        result.emplace_back(hit, std::move(cand1), std::move(cand2));
+        MatchHit &mhit = result.back();
+
+        // TODO remove it in PRadEventStruct.h
+        mhit.hycal_idx = i;
+
+        // find the matching status between HyCal and 2 GEMs
+        PostMatch(mhit);
+
+        // matched with gem1
+        if(TEST_BIT(mhit.hycal.flag, kGEM1Match)) {
+            matched1.insert(mhit.gem1.front());
+        }
+        // matched with gem2
+        if(TEST_BIT(mhit.hycal.flag, kGEM2Match)) {
+            matched2.insert(mhit.gem2.front());
+        }
     }
 
     return result;
@@ -108,58 +160,60 @@ const
         return true;
 }
 
-bool PRadDetMatch::PostMatch(MatchedIndex &index,
-                             HyCalHit &hycal, GEMHit *gem1, GEMHit *gem2)
+void PRadDetMatch::PostMatch(MatchHit &h)
 const
 {
-    // no candidates
-    if(index.gem1_cand.empty() && index.gem2_cand.empty())
-        return false;
-
-    // find the closest hits from gem1 and gem2
-    // large initial value
-    float dist = 1e3;
-    for(auto &idx : index.gem1_cand)
-    {
-        float new_dist = PRadCoordSystem::ProjectionDistance(hycal, gem1[idx]);
-        if(new_dist < dist) {
-            dist = new_dist;
-            index.gem1 = idx;
-        }
+    // sanity check, it should be rejected before calling the function
+    if(h.gem1.empty() && h.gem2.empty()) {
+        return;
     }
 
-    dist = 1e3;
-    for(auto &idx : index.gem2_cand)
-    {
-        float new_dist = PRadCoordSystem::ProjectionDistance(hycal, gem2[idx]);
-        if(new_dist < dist) {
-            dist = new_dist;
-            index.gem2 = idx;
-        }
+    // sort the candidates by delta_r between HyCal hit and GEM hits
+    auto lamda_dr = [&h] (const GEMHit &h1, const GEMHit &h2)
+                    {
+                        return   PRadCoordSystem::ProjectionDistance(h.hycal, h1)
+                               < PRadCoordSystem::ProjectionDistance(h.hycal, h2);
+                    };
+
+    std::sort(h.gem1.begin(), h.gem1.end(), lamda_dr);
+    std::sort(h.gem2.begin(), h.gem2.end(), lamda_dr);
+
+    // have candidates from gem1
+    if(h.gem1.size()) {
+        SET_BIT(h.hycal.flag, kGEM1Match);
     }
 
-    if(index.gem1 >= 0)
-        SET_BIT(hycal.flag, kGEM1Match);
-    if(index.gem2 >= 0)
-        SET_BIT(hycal.flag, kGEM2Match);
+    // have candidates from gem2
+    if(h.gem2.size()) {
+        SET_BIT(h.hycal.flag, kGEM2Match);
+    }
 
-    // both gem1 and gem2 have matched hits, check if they are overlapped
-    if(index.gem1 >= 0 && index.gem2 >= 0) {
-        float gem_dist = PRadCoordSystem::ProjectionDistance(gem1[index.gem1], gem2[index.gem2]);
-        // they are not overlap hits
+    // have candidates from both gem
+    // need to check which one matches better
+    if(h.gem1.size() && h.gem2.size()) {
+        const GEMHit &hit1 = h.gem1.front(), &hit2 = h.gem2.front();
+        float gem_dist = PRadCoordSystem::ProjectionDistance(hit1, hit2);
+        // not overlapping match
         if(gem_dist > overlapSigma * gemRes) {
-            float gem1_dist = PRadCoordSystem::ProjectionDistance(gem1[index.gem1], hycal);
-            float gem2_dist = PRadCoordSystem::ProjectionDistance(gem2[index.gem2], hycal);
-            // gem2 has a better match
-            if(gem2_dist < gem1_dist) {
-                index.gem1 = -1;
-                CLEAR_BIT(hycal.flag, kGEM1Match);
+            float dist1 = PRadCoordSystem::ProjectionDistance(h, hit1);
+            float dist2 = PRadCoordSystem::ProjectionDistance(h, hit2);
+            // gem1 matches
+            if(dist1 < dist2) {
+                // remove the matching flag from gem2
+                CLEAR_BIT(h.hycal.flag, kGEM2Match);
+            // gem2 matches
             } else {
-                index.gem2 = -1;
-                CLEAR_BIT(hycal.flag, kGEM2Match);
+                // remove the matching flag from gem1
+                CLEAR_BIT(h.hycal.flag, kGEM1Match);
             }
         }
     }
 
-    return true;
+    // using gem position instead of hycal's
+    // gem1 will always be used in overlapping match
+    if(TEST_BIT(h.hycal.flag, kGEM1Match)) {
+        h.SubstituteCoord(h.gem1.front());
+    } else {
+        h.SubstituteCoord(h.gem2.front());
+    }
 }

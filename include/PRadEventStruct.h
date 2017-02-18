@@ -495,7 +495,39 @@ public:
     : BaseHit(x, y, z, 0.), det_id(d), x_charge(xc), y_charge(yc),
       x_peak(xp), y_peak(yp), x_size(xs), y_size(ys)
     {};
+
 };
+
+class MatchHit : public BaseHit
+{
+public:
+    HyCalHit hycal;
+    std::vector<GEMHit> gem1;
+    std::vector<GEMHit> gem2;
+    // this index is kept because of decoder/physCalib is using it
+    // TODO revamp physCalib and remove this member
+    uint32_t hycal_idx;
+
+    MatchHit(const HyCalHit &hit)
+    : BaseHit(hit.x, hit.y, hit.z, hit.E), hycal(hit)
+    {};
+
+    MatchHit(const HyCalHit &hit, std::vector<GEMHit> &&v1, std::vector<GEMHit> &&v2)
+    : BaseHit(hit.x, hit.y, hit.z, hit.E), hycal(hit), gem1(v1), gem2(v2)
+    {};
+
+    MatchHit(const HyCalHit &hit, const std::vector<GEMHit> &v1, const std::vector<GEMHit> &v2)
+    : BaseHit(hit.x, hit.y, hit.z, hit.E), hycal(hit), gem1(v1), gem2(v2)
+    {};
+
+    void SubstituteCoord(const BaseHit &h)
+    {
+        x = h.x;
+        y = h.y;
+        z = h.z;
+    }
+};
+
 //============================================================================//
 // *END* CLUSTER STRUCTURE                                                    //
 //============================================================================//

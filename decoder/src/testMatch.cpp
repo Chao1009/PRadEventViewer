@@ -73,7 +73,7 @@ void testMatch(const string &path)
     hist[1] = new TH1F("PbWO4 R Diff", "Diff in R", 1000, -100, 100);
     hist[2] = new TH1F("Trans R Diff", "Diff in R", 1000, -100, 100);
     TH2F *hist2d = new TH2F("R Diff", "HyCal - GEM", 800, 0, 800, 200, -100, 100);
-    TH2F *histev = new TH2F("E vs theta", "Event Distribution", 200, 0, 10, 200, 0, 1400);
+    TH2F *histev = new TH2F("E vs theta", "Event Distribution", 200, 0, 8, 200, 0, 1400);
 
     PRadHyCalDetector *hycal_det = hycal->GetDetector();
     PRadGEMDetector *gem_det1 = gem->GetDetector("PRadGEM1");
@@ -116,37 +116,27 @@ void testMatch(const string &path)
             coord_sys->Transform(PRadDetector::PRadGEM1, gem1_hit.begin(), gem1_hit.end());
             coord_sys->Transform(PRadDetector::PRadGEM2, gem2_hit.begin(), gem2_hit.end());
 
-            coord_sys->Projection(hycal_hit.begin(), hycal_hit.end());
-            coord_sys->Projection(gem1_hit.begin(), gem1_hit.end());
-            coord_sys->Projection(gem2_hit.begin(), gem2_hit.end());
-
             // hits matching, return matched index
             auto matched = det_match->Match(hycal_hit, gem1_hit, gem2_hit);
 
-            for(auto idx : matched)
-            {
-                auto &hit = hycal_hit[idx.hycal];
+            // project to HyCal surface
+            coord_sys->Projection(matched.begin(), matched.end());
 
+            for(auto &hit : matched)
+            {
                 int hidx = 0;
-                if(TEST_BIT(hit.flag, kPbWO4))
+                if(TEST_BIT(hit.hycal.flag, kPbWO4))
                     hidx = 1;
-                if(TEST_BIT(hit.flag, kTransition))
+                if(TEST_BIT(hit.hycal.flag, kTransition))
                     hidx = 2;
 
-                float r = sqrt(hit.x*hit.x + hit.y*hit.y);
-                float x, y;
-                if(idx.gem1 >= 0) {
-                    x = gem1_hit[idx.gem1].x;
-                    y = gem1_hit[idx.gem1].y;
-                } else {
-                    x = gem2_hit[idx.gem2].x;
-                    y = gem2_hit[idx.gem2].y;
-                }
+                float r = sqrt(hit.hycal.x*hit.hycal.x + hit.hycal.y*hit.hycal.y);
+                float r2 = sqrt(hit.x*hit.x + hit.y*hit.y);
+                hist[hidx]->Fill(r - r2);
+                hist2d->Fill(r, r - r2);
 
-                float dr = r - sqrt(x*x + y*y);
-                hist[hidx]->Fill(dr);
-                hist2d->Fill(r, dr);
-                float angle = atan(sqrt(x*x + y*y)/hit.z)/3.14159*180.;
+                float z_dist = hit.z -  PRadCoordSystem::target().z;
+                float angle = atan(sqrt(hit.x*hit.x + hit.y*hit.y)/z_dist)/3.141593*180.;
                 histev->Fill(angle, hit.E);
             }
 
