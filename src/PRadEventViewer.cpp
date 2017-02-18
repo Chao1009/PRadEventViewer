@@ -68,8 +68,7 @@
 #include "evioFileChannel.hxx"
 #endif
 
-#define cap_value(a, min, max) \
-        (((a) >= (max)) ? (max) : ((a) <= (min)) ? (min) : (a))
+
 
 //============================================================================//
 // constructor                                                                //

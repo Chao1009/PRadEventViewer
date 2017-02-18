@@ -43,7 +43,7 @@ double cana::gamma(const double &z)
 {
 
     if(z < 1) {
-        return PI*(1 - z)/sin(PI*(1 - z))/cana::gamma(2 - z);
+        return pi*(1 - z)/sin(pi*(1 - z))/cana::gamma(2 - z);
     } else if(z == 1) {
         return 1;
     } else {
@@ -51,7 +51,7 @@ double cana::gamma(const double &z)
         for(int k = 1; k < __GAMMA_NUM; ++k)
             ag += __gamma_c[k]/(z - 1. + k);
 
-        double output = 0.5*log(2*PI)
+        double output = 0.5*log(2*pi)
                         + (z - 0.5)*log(z - 0.5 + __GAMMA_G)
                         - (z - 0.5 + __GAMMA_G)
                         + log(ag);
@@ -63,13 +63,13 @@ double cana::gamma(const double &z)
 double cana::spence(const double &z, const double &res)
 {
     if(z > 1) {
-        return 2*PI*PI/6 - log(z)*log(z)/2 - cana::spence(1/z, res);
+        return 2*pi*pi/6 - log(z)*log(z)/2 - cana::spence(1/z, res);
     } else if (z == 1) {
-        return PI*PI/6;
+        return pi*pi/6;
     } else if (z > 0.5) {
-        return PI*PI/6 - log(1-z)*log(z) - cana::spence(1-z, res);
+        return pi*pi/6 - log(1-z)*log(z) - cana::spence(1-z, res);
     } else if (z == 0.5) {
-        return PI*PI/6/2 - log(0.5)*log(0.5)/2;
+        return pi*pi/6/2 - log(0.5)*log(0.5)/2;
     } else if (z > 0) {
         return cana::spence_tr(z, res, __SPENCE_NMAX); // do nothing, fall into the bottom session
     } else if (z == 0) {
@@ -82,9 +82,9 @@ double cana::spence(const double &z, const double &res)
         double dz = z + 1;
         for(int i = 0; i < __SPENCE_NUM; ++i)
             output += __spence_c[i]*std::pow(dz, i);
-        return -(1 + output*dz*dz)*PI*PI/6/2 + dz*log(2);
+        return -(1 + output*dz*dz)*pi*pi/6/2 + dz*log(2);
     } else {
-        return -PI*PI/6 - log(-z)*log(-z)/2 - cana::spence(1/z, res);
+        return -pi*pi/6 - log(-z)*log(-z)/2 - cana::spence(1/z, res);
     }
 }
 

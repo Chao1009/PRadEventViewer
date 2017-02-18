@@ -15,6 +15,7 @@
 #include "PRadGEMSystem.h"
 #include "PRadCoordSystem.h"
 #include "PRadDetMatch.h"
+#include "canalib.h"
 #include "TFile.h"
 #include "TH1.h"
 #include "TH2.h"
@@ -136,7 +137,7 @@ void testMatch(const string &path)
                 hist2d->Fill(r, r - r2);
 
                 float z_dist = hit.z -  PRadCoordSystem::target().z;
-                float angle = atan(sqrt(hit.x*hit.x + hit.y*hit.y)/z_dist)/3.141593*180.;
+                float angle = atan(sqrt(hit.x*hit.x + hit.y*hit.y)/z_dist)*cana::rad_deg;
                 histev->Fill(angle, hit.E);
             }
 

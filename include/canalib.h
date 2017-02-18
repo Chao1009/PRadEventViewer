@@ -7,16 +7,16 @@
 #include <utility>
 #include <cmath>
 
-// definition of some constants
-#define ALPHA 7.297352568E-3    // 1./137.03599911
-#define PI 3.1415926535897932   // pi
-#define RADDEG 57.2957795131    // rad to degree
-#define ELECM 0.510998918       // MeV
-#define HBARC 197.326968        // hbar*c (MeV*fm)
-#define AMUMEV 931.494043       // MeV per amu
-
 namespace cana
 {
+    const static double alpha = 7.297352568E-3;     // 1./137.03599911
+    const static double pi = 3.1415926535897932;    // pi
+    const static double rad_deg = 57.2957795131;    // rad to degree
+    const static double deg_rad = 0.01745329252;    // degree to rad
+    const static double ele_mass = 0.510998918;     // MeV
+    const static double hbarc = 197.326968;         // hbar*c (MeV*fm)
+    const static double amu = 931.494043;           // MeV per amu
+
     double sigmoid(const double &a, const double &p);
     double gamma(const double &z);
     double spence(const double &z, const double &res = 1e-15);
