@@ -166,6 +166,8 @@ int main(int argc, char * argv [])
                 {
                     myhits[hit.hycal_idx].x_gem = hit.x;
                     myhits[hit.hycal_idx].y_gem = hit.y;
+                    // take the matching flag in
+                    myhits[hit.hycal_idx].flag = hit.hycal.flag;
                 }
 
 	            //get beam energy
