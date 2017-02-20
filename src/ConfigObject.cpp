@@ -220,8 +220,13 @@ const
         size_t end = pos2 - cl.size();
         size_t size = end - beg + 1;
 
-        ConfigValue val = GetConfigValue(result.substr(beg, size));
-        result.replace(pos1, pos2 - pos1 + 1, val.c_str());
+        if(pos1 > 0 && input.at(pos1 - 1) == '$') {
+            const char *env_p = std::getenv(result.substr(beg, size).c_str());
+            result.replace(pos1 - 1, pos2 - pos1 + 2, env_p);
+        } else {
+            ConfigValue val = GetConfigValue(result.substr(beg, size));
+            result.replace(pos1, pos2 - pos1 + 1, val.c_str());
+        }
     }
 
     return ConfigValue(std::move(result));
