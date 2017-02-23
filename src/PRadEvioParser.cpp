@@ -183,14 +183,19 @@ int PRadEvioParser::parseEvent(const PRadEventHeader *header)
     // parse ROC data
     while(index < buf_size)
     {
+        const PRadEventHeader *roc_header = (PRadEventHeader*)&buf[index];
+        // skip header size and data size 2 + (length - 1)
+        index += roc_header->length + 1;
 #ifdef MULTI_THREAD
         // open a new thread for large roc data bank
-        if(buf[index] > ROC_THREAD_THRES)
-            roc_threads.emplace_back(&PRadEvioParser::parseROCBank, this, (PRadEventHeader *)&buf[index]);
-        else
+        if(buf[index] > ROC_THREAD_THRES) {
+            roc_threads.emplace_back(&PRadEvioParser::parseROCBank, this, roc_header);
+        } else {
+            parseROCBank(roc_header);
+        }
+#else
+        parseROCBank(roc_header);
 #endif
-        parseROCBank((PRadEventHeader *)&buf[index]);
-        index += buf[index] + 1;
     }
 
 #ifdef MULTI_THREAD
@@ -233,8 +238,12 @@ void PRadEvioParser::parseROCBank(const PRadEventHeader *roc_header)
 
     while(index < roc_size)
     {
-        parseDataBank((PRadEventHeader *)&buf[index]);
-        index += buf[index] + 1;
+        const PRadEventHeader *bank_header = (PRadEventHeader*)&buf[index];
+        // skip bank header size and data size 2 + (length - 1)
+        index += bank_header->length + 1;
+
+        // parse bank
+        parseDataBank(bank_header);
     }
 }
 

@@ -696,6 +696,20 @@ ConfigParser::PathInfo ConfigParser::decompose_path(const string &path)
     return res;
 }
 
+// form the path
+std::string ConfigParser::compose_path(const ConfigParser::PathInfo &path)
+{
+    std::string res(path.dir);
+    res.reserve(path.dir.size() + path.name.size() + path.suffix.size() + 2);
+
+    if(res.back() != '/')
+        res += '/';
+
+    res += path.name + "." + path.suffix;
+
+    return res;
+}
+
 string ConfigParser::form_path(const string &dir, const string &file)
 {
     string file_path;
