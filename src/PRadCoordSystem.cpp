@@ -249,11 +249,6 @@ float PRadCoordSystem::ProjectionDistance(PRadCoordSystem::Point p1, PRadCoordSy
     return sqrt((p1.x - p2.x)*(p1.x - p2.x) + (p1.y - p2.y)*(p1.y - p2.y));
 }
 
-PRadCoordSystem::Point PRadCoordSystem::beamLine(float z)
-{
-    return Point(0., 0., z);
-}
-
 // origin of the beam center frame
 PRadCoordSystem::Point PRadCoordSystem::origin()
 {
@@ -264,6 +259,12 @@ PRadCoordSystem::Point PRadCoordSystem::origin()
 PRadCoordSystem::Point PRadCoordSystem::target()
 {
     return Point(0., 0., 88.9);
+}
+
+// beam line point
+PRadCoordSystem::Point PRadCoordSystem::BeamLine(const float &z)
+{
+    return Point(0., 0., z);
 }
 
 std::ostream &operator <<(std::ostream &os, const PRadCoordSystem::DetCoord &det)

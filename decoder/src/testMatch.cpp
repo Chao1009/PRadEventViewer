@@ -136,8 +136,7 @@ void testMatch(const string &path)
                 hist[hidx]->Fill(r - r2);
                 hist2d->Fill(r, r - r2);
 
-                float z_dist = hit.z -  PRadCoordSystem::target().z;
-                float angle = atan(sqrt(hit.x*hit.x + hit.y*hit.y)/z_dist)*cana::rad_deg;
+                float angle = coord_sys->GetPolarAngle(hit);
                 histev->Fill(angle, hit.E);
             }
 

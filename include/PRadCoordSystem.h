@@ -6,6 +6,7 @@
 #include <iostream>
 #include <map>
 #include <cmath>
+#include "canalib.h"
 #include "PRadDetector.h"
 #include "PRadEventStruct.h"
 
@@ -195,9 +196,10 @@ public:
 
 public:
     //static public members
-    static Point beamLine(float z);
     static Point origin();
     static Point target();
+    static Point BeamLine(const float &z);
+
     // basic projection functions
     static void Projection(float &x, float &y, float &z,
                            const float &xi, const float &yi, const float &zi,
@@ -219,6 +221,21 @@ public:
     {
         return ProjectionDistance(Point(t1.x, t1.y, t1.z), Point(t2.x, t2.y, t2.z));
     }
+
+    template<class T>
+    inline float GetPolarAngle(const T &hit, const Point &O = target())
+    {
+        float z = hit.z - O.z;
+        float r = sqrt(pow(z, 2) + pow(hit.x - O.x, 2) + pow(hit.y - O.y, 2));
+        return acos(z/r)*cana::rad_deg;
+    }
+
+    template<class T>
+    inline float GetAzimuthalAngle(const T &hit, const Point &O = target())
+    {
+        return atan2(hit.y - O.y, hit.x - O.x)*cana::rad_deg;
+    }
+
 
 protected:
     // offsets data, run number as key, order is important, thus use map instead of hash map
