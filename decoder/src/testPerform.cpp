@@ -10,6 +10,7 @@
 #include "PRadDSTParser.h"
 #include "PRadBenchMark.h"
 #include "PRadInfoCenter.h"
+#include "canalib.h"
 #include <iostream>
 #include <iomanip>
 #include <string>

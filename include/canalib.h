@@ -14,6 +14,8 @@ namespace cana
     const static double rad_deg = 57.2957795131;    // rad to degree
     const static double deg_rad = 0.01745329252;    // degree to rad
     const static double ele_mass = 0.510998918;     // MeV
+    const static double proton_mass = 938.272046;   // MeV
+    const static double neutron_mass = 939.5654133; // MeV
     const static double hbarc = 197.326968;         // hbar*c (MeV*fm)
     const static double amu = 931.494043;           // MeV per amu
 
@@ -240,6 +242,88 @@ namespace cana
             return mid - 1;
         }
     }
+
+    template<class Iter, typename T>
+    bool is_in(const T &val, Iter beg, Iter end)
+    {
+        for(Iter it = beg; it != end; ++it)
+        {
+            if(*it == val)
+                return true;
+        }
+
+        return false;
+    }
+
+    // a fast double to int conversion from Lua
+    // magical number is 2^51 + 2^52, it pushes double to the range of 2^52 ~ 2^53,
+    // within this range, the mantissa part is exactly the same as an integer
+    // it will be safe to simply cast it to a 32-bit integer
+    // Assumed little endian here, change i[0] to i[1] for big endian
+    union i_cast {double d; int i[2];};
+    inline int double2int(double d)
+    {
+        volatile union i_cast u;
+        u.d = d + 6755399441055744.0;
+        return u.i[0];
+    }
+
+    // Check if a point is in a polygon
+    // Implementation of the method described by Dan Sunday
+    // Check http://geomalgorithms.com/a03-_inclusion.html for details
+    // helper function to determine if the point is at the left side of a line
+    // > 0 : (x,y) is at left of the line by (x0, y0) and (x1, y1)
+    // = 0 : on the line
+    // < 0 : right of the line
+    template<typename T>
+    inline T is_left(const T &x, const T &y,
+                     const T &x0, const T &y0, const T &x1, const T &y1)
+    {
+        return (x1 - x0) * (y - y0) - (x - x0) * (y1 - y0);
+    }
+
+    // input: A 2d point and the iterators of polygon vertices
+    //        Vertices order determine how the polygon is reconstructed
+    //        The polygon is assumed to be closed, the last boundary connects
+    //        its first and last vertices
+    // output: winding number, 0 means outside
+    template<class Iter, typename T>
+    int inside_polygon_2d(const T& point, Iter pv_beg, Iter pv_end)
+    {
+        int wn = 0;    // the  winding number counter
+
+        // loop through all edges of the polygon
+        Iter it_next = pv_beg;
+        it_next++;
+        for(Iter it = pv_beg; it != pv_end; it++, it_next++)
+        {
+            // last vertex, the boundary is formed between it and the first one
+            if(it_next == pv_end)
+                it_next = pv_beg;
+
+            // start y <= point.y
+            if(it->y <= point.y)
+            {
+                // upward crossing
+                if(it_next->y > point.y)
+                    // left of this boundary
+                    if(is_left(point.x, point.y, it->x, it->y, it_next->x, it_next->y) > 0)
+                        ++wn;
+            }
+            else
+            {
+                // downward crossing
+                if(it_next->y <= point.y)
+                    // right of this boundary
+                    if(is_left(point.x, point.y, it->x, it->y, it_next->x, it_next->y) < 0)
+                        --wn;
+            }
+        }
+
+        // wn is positivie for counter clockwise and negative for clockwise
+        return abs(wn);
+    }
+
 };
 
 #endif
